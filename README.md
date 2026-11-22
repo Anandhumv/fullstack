@@ -144,6 +144,6 @@ The suite includes 4 verified automated test cases in `backend/utils/sla.test.js
 
 ## Trade-offs & What Was Not Finished (And Why)
 
-- **Dedicated Customer UI Portal:** We intentionally focused 100% of the UI effort on building a robust, single-screen Agent Dashboard. Customer interactions are supported via the zero-leak `/api/customer/tickets/:id` endpoint, proving private notes cannot leak at the API level while keeping within the project scope.
+- **Dedicated Customer UI Portal:** I intentionally focused 100% of the UI effort on building a robust, single-screen Agent Dashboard. Customer interactions are supported via the zero-leak `/api/customer/tickets/:id` endpoint, proving private notes cannot leak at the API level while keeping within the project scope.
 - **Containerization (Docker Compose):** Skipped in favor of direct cloud hosting (Neon PostgreSQL + Render backend + Vercel frontend), which avoids local container overhead and directly supports serverless database branching.
 
