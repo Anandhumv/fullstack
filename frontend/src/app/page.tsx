@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import ThemeToggle from './components/ThemeToggle';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -509,30 +510,30 @@ export default function AgentDashboard() {
     return [...publicMsgs, ...internalNotes].sort((a, b) => a.timestamp - b.timestamp);
   }, [selectedDetails]);
 
-  // Semantic Muted Badges
+  // Semantic Muted Badges (Low-Glare in Dark Mode)
   const renderPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'URGENT':
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-[rgba(239,68,68,0.14)] dark:text-[#FCA5A5] dark:border-[rgba(239,68,68,0.3)] tabular-nums">
             URGENT
           </span>
         );
       case 'MEDIUM':
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] dark:bg-[rgba(245,158,11,0.14)] dark:text-[#FCD34D] dark:border-[rgba(245,158,11,0.3)] tabular-nums">
             MEDIUM
           </span>
         );
       case 'LOW':
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-[rgba(16,185,129,0.14)] dark:text-[#6EE7B7] dark:border-[rgba(16,185,129,0.3)] tabular-nums">
             LOW
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 tabular-nums">
             {priority}
           </span>
         );
@@ -543,31 +544,31 @@ export default function AgentDashboard() {
     switch (status) {
       case 'OPEN':
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200 tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30 tabular-nums">
             OPEN
           </span>
         );
       case 'WAITING_ON_CUSTOMER':
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] dark:bg-[rgba(245,158,11,0.14)] dark:text-[#FCD34D] dark:border-[rgba(245,158,11,0.3)] tabular-nums">
             WAITING ON CUSTOMER
           </span>
         );
       case 'RESOLVED':
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] dark:bg-[rgba(16,185,129,0.14)] dark:text-[#6EE7B7] dark:border-[rgba(16,185,129,0.3)] tabular-nums">
             RESOLVED
           </span>
         );
       case 'CLOSED':
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 tabular-nums">
             CLOSED
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 tabular-nums">
             {status}
           </span>
         );
@@ -591,7 +592,7 @@ export default function AgentDashboard() {
 
   if (!isAuthChecked) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] flex items-center justify-center">
         <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-white font-bold text-xs flex items-center justify-center animate-pulse">
           FD
         </div>
@@ -600,24 +601,24 @@ export default function AgentDashboard() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] font-sans overflow-hidden transition-colors">
       {/* 1. TOP NAVBAR */}
-      <header className="h-13 bg-white border-b border-slate-200 px-5 flex items-center justify-between shrink-0 z-20 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <header className="h-13 bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-[#1E293B] px-5 flex items-center justify-between shrink-0 z-20 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-md bg-slate-900 border border-slate-800 flex items-center justify-center text-white font-bold text-xs shadow-2xs">
+          <div className="w-7 h-7 rounded-md bg-slate-900 dark:bg-[#0F172A] border border-slate-800 dark:border-[#334155] flex items-center justify-center text-white font-bold text-xs shadow-2xs">
             FD
           </div>
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-bold tracking-[-0.02em] text-slate-900">Frontdesk</h1>
-            <span className="text-slate-300 text-xs">/</span>
-            <span className="text-xs text-slate-500 font-medium hidden sm:inline">Operations</span>
+            <h1 className="text-sm font-bold tracking-[-0.02em] text-slate-900 dark:text-[#F8FAFC]">Frontdesk</h1>
+            <span className="text-slate-300 dark:text-[#334155] text-xs">/</span>
+            <span className="text-xs text-slate-500 dark:text-[#94A3B8] font-medium hidden sm:inline">Operations</span>
           </div>
         </div>
 
         {/* Right Header Actions */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md px-2 py-1 shadow-2xs">
-            <span className="text-[11px] font-medium text-slate-500 pl-1">Agent:</span>
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#1E293B] rounded-md px-2 py-1 shadow-2xs">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-[#64748B] pl-1">Agent:</span>
             <select
               value={currentAgent.id}
               onChange={(e) => {
@@ -627,10 +628,10 @@ export default function AgentDashboard() {
                   localStorage.setItem('frontdesk_agent', JSON.stringify(ag));
                 }
               }}
-              className="bg-transparent text-slate-900 text-xs font-semibold focus:outline-hidden cursor-pointer"
+              className="bg-transparent text-slate-900 dark:text-[#F8FAFC] text-xs font-semibold focus:outline-hidden cursor-pointer"
             >
               {agents.map((ag) => (
-                <option key={ag.id} value={ag.id}>
+                <option key={ag.id} value={ag.id} className="dark:bg-[#111827] dark:text-[#F8FAFC]">
                   {ag.name}
                 </option>
               ))}
@@ -638,12 +639,14 @@ export default function AgentDashboard() {
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1" title="Online" />
           </div>
 
+          <ThemeToggle />
+
           <button
             onClick={() => refreshTickets()}
             title="Refresh Queue"
-            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md border border-slate-200 transition cursor-pointer"
+            className="p-1.5 text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-[#1E293B] rounded-md border border-slate-200 dark:border-[#1E293B] transition cursor-pointer"
           >
-            <svg className={`w-3.5 h-3.5 ${loadingTickets ? 'animate-spin text-slate-900' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-3.5 h-3.5 ${loadingTickets ? 'animate-spin text-slate-900 dark:text-[#F8FAFC]' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
@@ -654,7 +657,7 @@ export default function AgentDashboard() {
               router.push('/login');
             }}
             title="Log out"
-            className="text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 px-2.5 py-1.5 rounded-md border border-slate-200 transition cursor-pointer"
+            className="text-xs font-medium text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-[#1E293B] px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-[#1E293B] transition cursor-pointer"
           >
             Log out
           </button>
@@ -664,45 +667,45 @@ export default function AgentDashboard() {
       {/* 2. THREE-PANE OPS LAYOUT */}
       <div className="flex flex-1 overflow-hidden">
         {/* PANE 1: LEFT QUEUE */}
-        <section className="w-80 lg:w-[350px] bg-white border-r border-slate-200 flex flex-col shrink-0">
+        <section className="w-80 lg:w-[350px] bg-white dark:bg-[#111827] border-r border-slate-200 dark:border-[#1E293B] flex flex-col shrink-0 transition-colors">
           {/* Queue Filter Bar */}
-          <div className="p-3 border-b border-slate-200 bg-slate-50/60">
+          <div className="p-3 border-b border-slate-200 dark:border-[#1E293B] bg-slate-50/60 dark:bg-[#111827]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B]">
                 Ticket Queue
               </span>
               <button
                 onClick={() => setShowNewModal(true)}
-                className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-medium rounded-md shadow-2xs transition flex items-center gap-1 cursor-pointer"
+                className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-white dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] text-[11px] font-medium rounded-md shadow-2xs transition flex items-center gap-1 cursor-pointer"
               >
                 <span>+</span> New Ticket
               </button>
             </div>
 
             {/* Segmented Filter Control */}
-            <div className="grid grid-cols-4 gap-1 bg-slate-200/60 p-0.5 rounded-lg text-xs font-medium">
+            <div className="grid grid-cols-4 gap-1 bg-slate-200/60 dark:bg-[#0F172A] dark:border dark:border-[#1E293B] p-0.5 rounded-lg text-xs font-medium">
               <button
                 onClick={() => setQueueFilter('ALL')}
                 className={`py-1 px-1.5 rounded-md transition text-center cursor-pointer flex items-center justify-center gap-1 ${
                   queueFilter === 'ALL'
-                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-[#F8FAFC] shadow-2xs font-semibold'
+                    : 'text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]'
                 }`}
               >
                 <span>All</span>
-                <span className="text-[10px] text-slate-400 tabular-nums">({tabCounts.all})</span>
+                <span className="text-[10px] text-slate-400 dark:text-[#64748B] tabular-nums">({tabCounts.all})</span>
               </button>
 
               <button
                 onClick={() => setQueueFilter('LATE')}
                 className={`py-1 px-1.5 rounded-md transition text-center flex items-center justify-center gap-1 cursor-pointer ${
                   queueFilter === 'LATE'
-                    ? 'bg-white text-rose-700 shadow-2xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-[#1E293B] text-rose-700 dark:text-[#FCA5A5] shadow-2xs font-semibold'
+                    : 'text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]'
                 }`}
               >
                 <span>Late</span>
-                <span className={`text-[10px] tabular-nums ${tabCounts.late > 0 ? 'text-rose-600 font-bold' : 'text-slate-400'}`}>
+                <span className={`text-[10px] tabular-nums ${tabCounts.late > 0 ? 'text-rose-600 dark:text-[#FCA5A5] font-bold' : 'text-slate-400 dark:text-[#64748B]'}`}>
                   ({tabCounts.late})
                 </span>
               </button>
@@ -711,52 +714,52 @@ export default function AgentDashboard() {
                 onClick={() => setQueueFilter('WAITING')}
                 className={`py-1 px-1.5 rounded-md transition text-center cursor-pointer flex items-center justify-center gap-1 ${
                   queueFilter === 'WAITING'
-                    ? 'bg-white text-amber-800 shadow-2xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-[#1E293B] text-amber-800 dark:text-[#FCD34D] shadow-2xs font-semibold'
+                    : 'text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]'
                 }`}
               >
                 <span>Wait</span>
-                <span className="text-[10px] text-slate-400 tabular-nums">({tabCounts.waiting})</span>
+                <span className="text-[10px] text-slate-400 dark:text-[#64748B] tabular-nums">({tabCounts.waiting})</span>
               </button>
 
               <button
                 onClick={() => setQueueFilter('UNASSIGNED')}
                 className={`py-1 px-1.5 rounded-md transition text-center cursor-pointer flex items-center justify-center gap-1 ${
                   queueFilter === 'UNASSIGNED'
-                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-[#F8FAFC] shadow-2xs font-semibold'
+                    : 'text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]'
                 }`}
               >
                 <span>Open</span>
-                <span className="text-[10px] text-slate-400 tabular-nums">({tabCounts.unassigned})</span>
+                <span className="text-[10px] text-slate-400 dark:text-[#64748B] tabular-nums">({tabCounts.unassigned})</span>
               </button>
             </div>
           </div>
 
           {/* Ticket Card List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1E293B]">
             {loadingTickets && tickets.length === 0 ? (
               /* Skeleton Loader */
               <div className="p-4 space-y-4">
                 {[1, 2, 3, 4, 5].map((idx) => (
                   <div key={idx} className="animate-pulse space-y-2">
                     <div className="flex justify-between">
-                      <div className="h-3 w-16 bg-slate-200 rounded" />
-                      <div className="h-3 w-12 bg-slate-200 rounded" />
+                      <div className="h-3 w-16 bg-slate-200 dark:bg-[#1E293B] rounded" />
+                      <div className="h-3 w-12 bg-slate-200 dark:bg-[#1E293B] rounded" />
                     </div>
-                    <div className="h-4 w-3/4 bg-slate-200 rounded" />
-                    <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                    <div className="h-4 w-3/4 bg-slate-200 dark:bg-[#1E293B] rounded" />
+                    <div className="h-3 w-1/2 bg-slate-100 dark:bg-[#1E293B]/60 rounded" />
                   </div>
                 ))}
               </div>
             ) : filteredTickets.length === 0 ? (
               /* Minimal Empty State */
-              <div className="p-8 text-center text-slate-400 flex flex-col items-center">
-                <svg className="w-8 h-8 text-slate-300 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <div className="p-8 text-center text-slate-400 dark:text-[#64748B] flex flex-col items-center">
+                <svg className="w-8 h-8 text-slate-300 dark:text-[#334155] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="text-xs font-medium text-slate-600">No tickets in this view</span>
-                <span className="text-[11px] text-slate-400 mt-0.5">Try choosing another filter tab</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-[#94A3B8]">No tickets in this view</span>
+                <span className="text-[11px] text-slate-400 dark:text-[#64748B] mt-0.5">Try choosing another filter tab</span>
               </div>
             ) : (
               filteredTickets.map((ticket) => {
@@ -769,14 +772,14 @@ export default function AgentDashboard() {
                     onClick={() => setSelectedTicketId(ticket.id)}
                     className={`p-3.5 cursor-pointer transition-colors relative ${
                       isSelected
-                        ? 'bg-slate-100/90 border-l-[3px] border-slate-900 shadow-2xs'
-                        : 'border-l-[3px] border-transparent hover:bg-slate-50/80'
+                        ? 'bg-slate-100/90 dark:bg-[#1E293B] border-l-[3px] border-slate-900 dark:border-l-[#F8FAFC] shadow-2xs'
+                        : 'border-l-[3px] border-transparent hover:bg-slate-50/80 dark:hover:bg-[#1E293B]/50'
                     }`}
                   >
                     {/* Top Row: ID, Badges, LATE flag */}
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono text-[11px] font-semibold text-slate-500 tabular-nums">
+                        <span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-[#64748B] tabular-nums">
                           #{ticket.id}
                         </span>
                         {renderPriorityBadge(ticket.priority)}
@@ -785,23 +788,23 @@ export default function AgentDashboard() {
 
                       {/* Crisp Muted LATE Badge */}
                       {isLate && (
-                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 tabular-nums shrink-0">
+                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-[rgba(239,68,68,0.14)] dark:text-[#FCA5A5] dark:border-[rgba(239,68,68,0.3)] tabular-nums shrink-0">
                           LATE
                         </span>
                       )}
                     </div>
 
                     {/* Subject */}
-                    <h3 className="font-medium text-slate-900 text-xs line-clamp-1 mb-1 leading-snug">
+                    <h3 className="font-medium text-slate-900 dark:text-[#F8FAFC] text-xs line-clamp-1 mb-1 leading-snug">
                       {ticket.subject}
                     </h3>
 
                     {/* Customer & Timestamp */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1.5">
-                      <span className="truncate max-w-[170px] text-slate-600">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#94A3B8] mt-1.5">
+                      <span className="truncate max-w-[170px] text-slate-600 dark:text-[#94A3B8]">
                         {ticket.customer_name || 'Customer'}
                       </span>
-                      <span className="shrink-0 text-slate-400 tabular-nums">
+                      <span className="shrink-0 text-slate-400 dark:text-[#64748B] tabular-nums">
                         {formatDateTime(ticket.created_at)}
                       </span>
                     </div>
@@ -813,62 +816,62 @@ export default function AgentDashboard() {
         </section>
 
         {/* PANE 2: CENTER THREAD & COMPOSER */}
-        <main className="flex-1 min-w-0 bg-[#F8FAFC] flex flex-col overflow-y-auto border-r border-slate-200">
+        <main className="flex-1 min-w-0 bg-[#F8FAFC] dark:bg-[#0B0F19] flex flex-col overflow-y-auto border-r border-slate-200 dark:border-[#1E293B] transition-colors">
           {loadingDetails && !selectedDetails ? (
-            <div className="flex-1 flex items-center justify-center text-slate-400 text-xs">
-              <svg className="animate-spin h-5 w-5 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24">
+            <div className="flex-1 flex items-center justify-center text-slate-400 dark:text-[#64748B] text-xs">
+              <svg className="animate-spin h-5 w-5 text-slate-400 dark:text-[#64748B] mr-2" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
               </svg>
               Loading conversation...
             </div>
           ) : !selectedDetails ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mb-2.5">
-                <svg className="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-[#64748B] p-8 text-center">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-[#111827] border border-slate-200 dark:border-[#1E293B] flex items-center justify-center text-slate-400 dark:text-[#64748B] mb-2.5">
+                <svg className="w-5 h-5 text-slate-400 dark:text-[#64748B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
               </div>
-              <h3 className="text-xs font-semibold text-slate-700">No ticket selected</h3>
-              <p className="text-xs max-w-xs mt-0.5 text-slate-400">
+              <h3 className="text-xs font-semibold text-slate-700 dark:text-[#94A3B8]">No ticket selected</h3>
+              <p className="text-xs max-w-xs mt-0.5 text-slate-400 dark:text-[#64748B]">
                 Choose an item from the queue to view messages, post notes, and check SLA timers.
               </p>
             </div>
           ) : (
             <div className="flex flex-col flex-1">
               {/* Ticket Top Header Bar */}
-              <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-2xs">
+              <div className="bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-[#1E293B] px-6 py-4 shadow-2xs transition-colors">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono text-xs font-semibold text-slate-500 tabular-nums">
+                  <span className="font-mono text-xs font-semibold text-slate-500 dark:text-[#64748B] tabular-nums">
                     Ticket #{selectedDetails.ticket.id}
                   </span>
                   {renderStatusBadge(selectedDetails.ticket.status)}
                   {renderPriorityBadge(selectedDetails.ticket.priority)}
                   {selectedDetails.sla?.isLate && (
-                    <span className="bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-[10px] px-1.5 py-0.5 rounded tabular-nums">
+                    <span className="bg-rose-50 text-rose-700 border border-rose-200 dark:bg-[rgba(239,68,68,0.14)] dark:text-[#FCA5A5] dark:border-[rgba(239,68,68,0.3)] font-semibold text-[10px] px-1.5 py-0.5 rounded tabular-nums">
                       SLA BREACHED
                     </span>
                   )}
                 </div>
-                <h2 className="text-base font-semibold text-slate-900 tracking-[-0.02em]">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-[#F8FAFC] tracking-[-0.02em]">
                   {selectedDetails.ticket.subject}
                 </h2>
-                <div className="text-[11px] text-slate-500 mt-1">
-                  Opened by <span className="font-medium text-slate-700">{selectedDetails.ticket.customer_name || 'Customer'}</span> ({selectedDetails.ticket.customer_email}) &bull; <span className="tabular-nums">{formatDateTime(selectedDetails.ticket.created_at)}</span>
+                <div className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-1">
+                  Opened by <span className="font-medium text-slate-700 dark:text-[#F8FAFC]">{selectedDetails.ticket.customer_name || 'Customer'}</span> ({selectedDetails.ticket.customer_email}) &bull; <span className="tabular-nums">{formatDateTime(selectedDetails.ticket.created_at)}</span>
                 </div>
               </div>
 
               {/* Conversation Thread Feed */}
               <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                 {/* Original Description Card */}
-                <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs">
-                  <div className="flex items-center justify-between text-xs text-slate-500 mb-2 pb-2 border-b border-slate-100">
-                    <span className="font-medium text-slate-800">
+                <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1E293B] rounded-lg p-4 shadow-2xs transition-colors">
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#94A3B8] mb-2 pb-2 border-b border-slate-100 dark:border-[#1E293B]">
+                    <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">
                       Initial Request &bull; {selectedDetails.ticket.customer_name}
                     </span>
-                    <span className="tabular-nums text-[11px]">{formatDateTime(selectedDetails.ticket.created_at)}</span>
+                    <span className="tabular-nums text-[11px] text-slate-400 dark:text-[#64748B]">{formatDateTime(selectedDetails.ticket.created_at)}</span>
                   </div>
-                  <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-xs text-slate-700 dark:text-[#94A3B8] whitespace-pre-wrap leading-relaxed">
                     {selectedDetails.ticket.description}
                   </p>
                 </div>
@@ -876,24 +879,24 @@ export default function AgentDashboard() {
                 {/* Timeline Messages & Internal Notes */}
                 {conversationFeed.map((item) => {
                   if (item.type === 'note') {
-                    // ZERO-LEAK INTERNAL NOTE (WARM CREAM SURFACE WITH 3PX LEFT ACCENT)
+                    // ZERO-LEAK INTERNAL NOTE (WARM DARK AMBER IN DARK MODE, CREAM IN LIGHT MODE)
                     return (
                       <div
                         key={`note-${item.id}`}
-                        className="bg-[#FEFCE8] border-l-[3px] border-[#EAB308] border-y border-r border-amber-200/60 rounded-lg p-4 text-amber-950 shadow-2xs transition"
+                        className="bg-[#FEFCE8] dark:bg-[#1E190C] border-l-[3px] border-[#EAB308] border-y border-r border-amber-200/60 dark:border-y-[#EAB308]/20 dark:border-r-[#EAB308]/20 rounded-lg p-4 text-amber-950 dark:text-[#FDE047] shadow-2xs transition-colors"
                       >
-                        <div className="flex items-center justify-between mb-2 pb-2 border-b border-amber-200/60">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200">
-                            <svg className="w-3 h-3 text-amber-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <div className="flex items-center justify-between mb-2 pb-2 border-b border-amber-200/60 dark:border-[#EAB308]/20">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-amber-100 dark:bg-[#2A1E07] text-amber-900 dark:text-[#FDE047] border border-amber-200 dark:border-[#EAB308]/40">
+                            <svg className="w-3 h-3 text-amber-800 dark:text-[#FDE047]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                             <span>Internal Note &mdash; Team Only</span>
                           </span>
-                          <span className="text-[11px] text-amber-900/80 font-medium tabular-nums">
+                          <span className="text-[11px] text-amber-900/80 dark:text-[#FDE047]/80 font-medium tabular-nums">
                             {item.agent_name || 'Agent'} &bull; {formatDateTime(item.created_at)}
                           </span>
                         </div>
-                        <p className="text-xs text-amber-950 whitespace-pre-wrap leading-relaxed">{item.body}</p>
+                        <p className="text-xs text-amber-950 dark:text-[#FDE047] whitespace-pre-wrap leading-relaxed">{item.body}</p>
                       </div>
                     );
                   }
@@ -906,26 +909,26 @@ export default function AgentDashboard() {
                       className={`flex flex-col ${isAgent ? 'items-end' : 'items-start'}`}
                     >
                       <div
-                        className={`max-w-2xl rounded-lg p-4 shadow-2xs border text-xs leading-relaxed ${
+                        className={`max-w-2xl rounded-lg p-4 shadow-2xs border text-xs leading-relaxed transition-colors ${
                           isAgent
-                            ? 'bg-[#F8FAFC] border-slate-200/90 text-slate-900'
-                            : 'bg-white border-slate-200 text-slate-800'
+                            ? 'bg-[#F8FAFC] dark:bg-[#0F172A] border-slate-200/90 dark:border-[#1E293B] text-slate-900 dark:text-[#F8FAFC]'
+                            : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1E293B] text-slate-800 dark:text-[#F8FAFC]'
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-4 text-[11px] text-slate-500 mb-1.5 pb-1 border-b border-slate-100">
-                          <span className="font-semibold text-slate-900">
+                        <div className="flex items-center justify-between gap-4 text-[11px] text-slate-500 dark:text-[#94A3B8] mb-1.5 pb-1 border-b border-slate-100 dark:border-[#1E293B]">
+                          <span className="font-semibold text-slate-900 dark:text-[#F8FAFC]">
                             {item.sender_name || 'User'}
                             {isAgent ? (
-                              <span className="ml-1.5 text-[9px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-bold uppercase">
+                              <span className="ml-1.5 text-[9px] bg-slate-200 dark:bg-[#1E293B] text-slate-700 dark:text-[#94A3B8] px-1.5 py-0.2 rounded font-bold uppercase">
                                 Staff
                               </span>
                             ) : (
-                              <span className="ml-1.5 text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold uppercase">
+                              <span className="ml-1.5 text-[9px] bg-slate-100 dark:bg-[#0F172A] text-slate-600 dark:text-[#94A3B8] px-1.5 py-0.2 rounded font-semibold uppercase">
                                 Customer
                               </span>
                             )}
                           </span>
-                          <span className="tabular-nums text-slate-400">{formatDateTime(item.created_at)}</span>
+                          <span className="tabular-nums text-slate-400 dark:text-[#64748B]">{formatDateTime(item.created_at)}</span>
                         </div>
                         <p className="whitespace-pre-wrap">{item.body}</p>
                       </div>
@@ -934,24 +937,24 @@ export default function AgentDashboard() {
                 })}
 
                 {conversationFeed.length === 0 && (
-                  <div className="text-center py-6 text-xs text-slate-400">
+                  <div className="text-center py-6 text-xs text-slate-400 dark:text-[#64748B]">
                     No replies or notes recorded yet.
                   </div>
                 )}
               </div>
 
               {/* REPLY & NOTE COMPOSER (STICKY AT BOTTOM) */}
-              <div className="bg-white border-t border-slate-200 p-4 sticky bottom-0 z-10 shadow-[0_-2px_6px_rgba(15,23,42,0.03)]">
+              <div className="bg-white dark:bg-[#111827] border-t border-slate-200 dark:border-[#1E293B] p-4 sticky bottom-0 z-10 shadow-[0_-2px_6px_rgba(15,23,42,0.03)] transition-colors">
                 <form onSubmit={handleSubmitMessage}>
                   {/* Clean Segmented Tab Toggle */}
-                  <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200 mb-2.5 text-xs">
+                  <div className="inline-flex p-0.5 bg-slate-100 dark:bg-[#0F172A] rounded-lg border border-slate-200 dark:border-[#1E293B] mb-2.5 text-xs">
                     <button
                       type="button"
                       onClick={() => setComposerMode('reply')}
                       className={`px-3 py-1.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1.5 ${
                         composerMode === 'reply'
-                          ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-[#F8FAFC] shadow-2xs font-semibold'
+                          : 'text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]'
                       }`}
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -964,15 +967,15 @@ export default function AgentDashboard() {
                       onClick={() => setComposerMode('note')}
                       className={`px-3 py-1.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1.5 ${
                         composerMode === 'note'
-                          ? 'bg-[#FEFCE8] text-[#854D0E] shadow-2xs border border-[#FDE68A] font-semibold'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-[#FEFCE8] dark:bg-[#1E190C] text-[#854D0E] dark:text-[#FDE047] shadow-2xs border border-[#FDE68A] dark:border-[#EAB308]/50 font-semibold'
+                          : 'text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]'
                       }`}
                     >
-                      <svg className="w-3.5 h-3.5 text-amber-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-3.5 h-3.5 text-amber-700 dark:text-[#FDE047]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                       <span>Internal Note</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-800 font-bold uppercase tracking-wider">
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 dark:bg-[#2A1E07] text-amber-800 dark:text-[#FDE047] font-bold uppercase tracking-wider">
                         Team Only
                       </span>
                     </button>
@@ -991,23 +994,23 @@ export default function AgentDashboard() {
                       }
                       className={`w-full rounded-lg p-2.5 text-xs border focus:outline-hidden transition-all resize-none font-sans ${
                         composerMode === 'reply'
-                          ? 'border-slate-200 bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 placeholder-slate-400'
-                          : 'border-[#EAB308]/60 bg-[#FEFCE8] focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] text-amber-950 placeholder-amber-800/50'
+                          ? 'border-slate-200 dark:border-[#334155] bg-white dark:bg-[#0F172A] focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 text-slate-900 dark:text-[#F8FAFC] placeholder-slate-400 dark:placeholder-slate-500'
+                          : 'border-[#EAB308]/60 dark:border-[#EAB308]/50 bg-[#FEFCE8] dark:bg-[#1E190C] focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] text-amber-950 dark:text-[#FDE047] placeholder-amber-800/50 dark:placeholder-[#FDE047]/40'
                       }`}
                     />
                   </div>
 
                   {/* Submit Button Bar */}
                   <div className="flex items-center justify-between mt-2.5">
-                    <span className="text-[11px] text-slate-400">
-                      Author: <span className="font-medium text-slate-700">{currentAgent.name}</span>
+                    <span className="text-[11px] text-slate-400 dark:text-[#64748B]">
+                      Author: <span className="font-medium text-slate-700 dark:text-[#F8FAFC]">{currentAgent.name}</span>
                     </span>
 
                     {composerMode === 'reply' ? (
                       <button
                         type="submit"
                         disabled={submittingAction || !composerText.trim()}
-                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-md text-xs font-medium border border-slate-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] disabled:opacity-40 text-white rounded-md text-xs font-medium border border-slate-800 dark:border-[#F8FAFC] shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
                       >
                         {submittingAction ? 'Sending...' : 'Send Public Reply'}
                       </button>
@@ -1015,9 +1018,9 @@ export default function AgentDashboard() {
                       <button
                         type="submit"
                         disabled={submittingAction || !composerText.trim()}
-                        className="px-3.5 py-1.5 bg-[#B45309] hover:bg-[#92400E] disabled:opacity-40 text-white rounded-md text-xs font-medium border border-[#B45309] shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-1.5 bg-[#B45309] hover:bg-[#92400E] dark:bg-[#EAB308] dark:hover:bg-[#CA8A04] dark:text-slate-950 disabled:opacity-40 text-white rounded-md text-xs font-medium border border-[#B45309] dark:border-[#EAB308] shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
                       >
-                        <svg className="w-3.5 h-3.5 text-amber-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-3.5 h-3.5 text-amber-100 dark:text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                         <span>{submittingAction ? 'Saving...' : 'Add Internal Note'}</span>
@@ -1032,49 +1035,49 @@ export default function AgentDashboard() {
 
         {/* PANE 3: RIGHT INSPECTOR PANEL (TICKET CONTROLS, SLA, AUDIT LOG) */}
         {selectedDetails && (
-          <aside className="w-72 xl:w-80 shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-y-auto divide-y divide-slate-100">
+          <aside className="w-72 xl:w-80 shrink-0 bg-white dark:bg-[#111827] border-l border-slate-200 dark:border-[#1E293B] flex flex-col overflow-y-auto divide-y divide-slate-100 dark:divide-[#1E293B] transition-colors">
             {/* 1. Ticket Controls Section */}
             <div className="p-4 space-y-3.5">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B]">
                 Ticket Controls
               </span>
 
               {/* Priority Selector */}
               <div>
-                <label className="block text-[11px] text-slate-500 mb-1">Priority</label>
+                <label className="block text-[11px] text-slate-500 dark:text-[#64748B] mb-1">Priority</label>
                 <select
                   value={selectedDetails.ticket.priority}
                   disabled={submittingAction}
                   onChange={(e) =>
                     handleChangePriority(e.target.value as 'URGENT' | 'MEDIUM' | 'LOW')
                   }
-                  className="w-full bg-white border border-slate-200 text-xs font-semibold text-slate-800 rounded-md px-2.5 py-1.5 focus:border-slate-900 focus:outline-hidden cursor-pointer"
+                  className="w-full bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] text-xs font-semibold text-slate-800 dark:text-[#F8FAFC] rounded-md px-2.5 py-1.5 focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:outline-hidden cursor-pointer"
                 >
-                  <option value="URGENT">URGENT (2h / 9h)</option>
-                  <option value="MEDIUM">MEDIUM (4.5h / 27h)</option>
-                  <option value="LOW">LOW (9h / 45h)</option>
+                  <option value="URGENT" className="dark:bg-[#111827]">URGENT (2h / 9h)</option>
+                  <option value="MEDIUM" className="dark:bg-[#111827]">MEDIUM (4.5h / 27h)</option>
+                  <option value="LOW" className="dark:bg-[#111827]">LOW (9h / 45h)</option>
                 </select>
               </div>
 
               {/* Claim Action */}
               <div>
-                <label className="block text-[11px] text-slate-500 mb-1">Assigned Agent</label>
+                <label className="block text-[11px] text-slate-500 dark:text-[#64748B] mb-1">Assigned Agent</label>
                 {selectedDetails.ticket.assigned_agent_id === currentAgent.id ? (
-                  <div className="w-full py-1.5 px-2.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                  <div className="w-full py-1.5 px-2.5 rounded-md bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-[#6EE7B7] text-xs font-medium flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-[#6EE7B7]" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Claimed by you</span>
                   </div>
                 ) : selectedDetails.ticket.assigned_agent_id ? (
                   <div className="space-y-1.5">
-                    <div className="text-xs text-slate-700 font-medium">
+                    <div className="text-xs text-slate-700 dark:text-[#F8FAFC] font-medium">
                       {selectedDetails.ticket.assigned_agent_name || `Agent #${selectedDetails.ticket.assigned_agent_id}`}
                     </div>
                     <button
                       onClick={handleClaimTicket}
                       disabled={submittingAction}
-                      className="w-full py-1.5 px-2.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-md border border-slate-200 transition cursor-pointer"
+                      className="w-full py-1.5 px-2.5 bg-white dark:bg-[#0F172A] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-700 dark:text-[#F8FAFC] text-xs font-medium rounded-md border border-slate-200 dark:border-[#334155] transition cursor-pointer"
                     >
                       Take Over Ticket
                     </button>
@@ -1083,7 +1086,7 @@ export default function AgentDashboard() {
                   <button
                     onClick={handleClaimTicket}
                     disabled={submittingAction}
-                    className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-md border border-slate-800 shadow-2xs transition cursor-pointer"
+                    className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] text-white text-xs font-medium rounded-md border border-slate-800 dark:border-[#F8FAFC] shadow-2xs transition cursor-pointer"
                   >
                     Claim Ticket
                   </button>
@@ -1096,9 +1099,9 @@ export default function AgentDashboard() {
                   <button
                     onClick={handleResolveTicket}
                     disabled={submittingAction}
-                    className="w-full py-1.5 px-3 bg-white hover:bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200 transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-1.5 px-3 bg-white dark:bg-emerald-500/15 hover:bg-emerald-50 dark:hover:bg-emerald-500/25 text-emerald-700 dark:text-[#6EE7B7] rounded-md text-xs font-medium border border-emerald-200 dark:border-emerald-500/30 transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                    <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-[#6EE7B7]" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Mark as Resolved</span>
@@ -1107,7 +1110,7 @@ export default function AgentDashboard() {
                   <button
                     onClick={handleReopenTicket}
                     disabled={submittingAction}
-                    className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-medium border border-slate-200 transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-1.5 px-3 bg-white dark:bg-[#0F172A] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-700 dark:text-[#F8FAFC] rounded-md text-xs font-medium border border-slate-200 dark:border-[#334155] transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>Reopen Ticket</span>
                   </button>
@@ -1118,55 +1121,55 @@ export default function AgentDashboard() {
             {/* 2. SLA Status Section */}
             {selectedDetails.sla && (
               <div className="p-4 space-y-3">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B]">
                   SLA Operations
                 </span>
 
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Clock:</span>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-[#1E293B]">
+                    <span className="text-slate-500 dark:text-[#64748B]">Clock:</span>
                     {selectedDetails.ticket.status === 'WAITING_ON_CUSTOMER' ? (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] dark:bg-[rgba(245,158,11,0.14)] dark:text-[#FCD34D] dark:border-[rgba(245,158,11,0.3)]">
                         Paused
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] dark:bg-[rgba(16,185,129,0.14)] dark:text-[#6EE7B7] dark:border-[rgba(16,185,129,0.3)]">
                         Active
                       </span>
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
-                    <span className="text-slate-500">Elapsed Working Time:</span>
-                    <span className="font-semibold text-slate-800 tabular-nums">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-[#1E293B]">
+                    <span className="text-slate-500 dark:text-[#64748B]">Elapsed Working Time:</span>
+                    <span className="font-semibold text-slate-800 dark:text-[#F8FAFC] tabular-nums">
                       {selectedDetails.sla.workingMinutesElapsed ?? 0}m ({((selectedDetails.sla.workingMinutesElapsed ?? 0) / 60).toFixed(1)}h)
                     </span>
                   </div>
 
-                  <div className="py-1 border-b border-slate-100">
+                  <div className="py-1 border-b border-slate-100 dark:border-[#1E293B]">
                     <div className="flex justify-between items-center mb-0.5">
-                      <span className="text-slate-500">First Reply Due:</span>
+                      <span className="text-slate-500 dark:text-[#64748B]">First Reply Due:</span>
                       {selectedDetails.sla.isFirstReplyBreached && (
-                        <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                        <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200 dark:bg-[rgba(239,68,68,0.14)] dark:text-[#FCA5A5] dark:border-[rgba(239,68,68,0.3)]">
                           Breached
                         </span>
                       )}
                     </div>
-                    <span className="font-medium text-slate-800 tabular-nums">
+                    <span className="font-medium text-slate-800 dark:text-[#F8FAFC] tabular-nums">
                       {formatDateTime(selectedDetails.sla.firstReplyDueAt)}
                     </span>
                   </div>
 
                   <div className="py-1">
                     <div className="flex justify-between items-center mb-0.5">
-                      <span className="text-slate-500">Resolution Due:</span>
+                      <span className="text-slate-500 dark:text-[#64748B]">Resolution Due:</span>
                       {selectedDetails.sla.isResolutionBreached && (
-                        <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                        <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200 dark:bg-[rgba(239,68,68,0.14)] dark:text-[#FCA5A5] dark:border-[rgba(239,68,68,0.3)]">
                           Breached
                         </span>
                       )}
                     </div>
-                    <span className="font-medium text-slate-800 tabular-nums">
+                    <span className="font-medium text-slate-800 dark:text-[#F8FAFC] tabular-nums">
                       {formatDateTime(selectedDetails.sla.resolutionDueAt)}
                     </span>
                   </div>
@@ -1177,32 +1180,32 @@ export default function AgentDashboard() {
             {/* 3. Immutable Audit Trail Section */}
             <div className="p-4 flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B]">
                   Audit Trail
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 tabular-nums">
+                <span className="text-[10px] font-mono text-slate-400 dark:text-[#64748B] tabular-nums">
                   {selectedDetails.audit_logs?.length || 0} events
                 </span>
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                 {(!selectedDetails.audit_logs || selectedDetails.audit_logs.length === 0) ? (
-                  <div className="text-[11px] text-slate-400 py-3 text-center">No audit entries.</div>
+                  <div className="text-[11px] text-slate-400 dark:text-[#64748B] py-3 text-center">No audit entries.</div>
                 ) : (
-                  <div className="border-l border-slate-200 pl-3 space-y-3.5">
+                  <div className="border-l border-slate-200 dark:border-[#1E293B] pl-3 space-y-3.5">
                     {selectedDetails.audit_logs.map((log) => (
                       <div key={log.id} className="relative text-xs">
-                        <div className="absolute -left-[17px] top-1 w-2 h-2 rounded-full bg-slate-400 border border-white" />
+                        <div className="absolute -left-[17px] top-1 w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-600 border border-white dark:border-[#111827]" />
                         <div className="flex items-center justify-between gap-1 mb-0.5">
-                          <span className="font-mono text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                          <span className="font-mono text-[10px] font-semibold text-slate-700 dark:text-[#F8FAFC] bg-slate-100 dark:bg-[#0F172A] px-1.5 py-0.2 rounded border border-slate-200 dark:border-[#1E293B]">
                             {log.action}
                           </span>
-                          <span className="text-[10px] text-slate-400 tabular-nums">
+                          <span className="text-[10px] text-slate-400 dark:text-[#64748B] tabular-nums">
                             {formatDateTime(log.created_at)}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600">
-                          by <strong className="text-slate-800">{log.actor_name || 'System'}</strong>
+                        <p className="text-[11px] text-slate-600 dark:text-[#94A3B8]">
+                          by <strong className="text-slate-800 dark:text-[#F8FAFC]">{log.actor_name || 'System'}</strong>
                         </p>
                       </div>
                     ))}
@@ -1221,27 +1224,27 @@ export default function AgentDashboard() {
             key={t.id}
             className={`pointer-events-auto p-3 rounded-lg border text-xs shadow-md flex items-start justify-between gap-3 transition-all ${
               t.type === 'error'
-                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                ? 'bg-rose-50 dark:bg-[#1A0C0E] border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-[#FCA5A5]'
                 : t.type === 'warning'
-                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                ? 'bg-amber-50 dark:bg-[#1E190C] border-amber-200 dark:border-amber-500/30 text-amber-900 dark:text-[#FCD34D]'
                 : t.type === 'success'
-                ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
-                : 'bg-white border-slate-200 text-slate-800 shadow-sm'
+                ? 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1E293B] text-slate-900 dark:text-[#F8FAFC] shadow-sm'
+                : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1E293B] text-slate-800 dark:text-[#F8FAFC] shadow-sm'
             }`}
           >
             <div className="flex items-start gap-2">
               {t.type === 'success' && (
-                <svg className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="w-4 h-4 text-emerald-600 dark:text-[#6EE7B7] shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}
               {t.type === 'warning' && (
-                <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="w-4 h-4 text-amber-600 dark:text-[#FCD34D] shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               )}
               {t.type === 'error' && (
-                <svg className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="w-4 h-4 text-rose-600 dark:text-[#FCA5A5] shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               )}
@@ -1252,7 +1255,7 @@ export default function AgentDashboard() {
             </div>
             <button
               onClick={() => removeToast(t.id)}
-              className="text-slate-400 hover:text-slate-700 text-xs font-bold cursor-pointer"
+              className="text-slate-400 dark:text-[#64748B] hover:text-slate-700 dark:hover:text-[#F8FAFC] text-xs font-bold cursor-pointer"
             >
               &times;
             </button>
@@ -1262,13 +1265,13 @@ export default function AgentDashboard() {
 
       {/* 4. NEW TICKET MODAL */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-semibold text-slate-900 text-sm tracking-[-0.02em]">Create New Ticket</h3>
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-[#111827] rounded-xl shadow-lg max-w-md w-full p-6 border border-slate-200 dark:border-[#1E293B]">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#1E293B] mb-4">
+              <h3 className="font-semibold text-slate-900 dark:text-[#F8FAFC] text-sm tracking-[-0.02em]">Create New Ticket</h3>
               <button
                 onClick={() => setShowNewModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-xs cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:text-[#64748B] dark:hover:text-[#F8FAFC] font-bold text-xs cursor-pointer"
               >
                 &times;
               </button>
@@ -1276,7 +1279,7 @@ export default function AgentDashboard() {
 
             <form onSubmit={handleCreateTicket} className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1">
                   Subject Summary
                 </label>
                 <input
@@ -1285,44 +1288,44 @@ export default function AgentDashboard() {
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
                   placeholder="e.g. Production API timeout error"
-                  className="w-full text-xs border border-slate-200 rounded-lg p-2 text-slate-900 focus:border-slate-900 focus:outline-hidden"
+                  className="w-full text-xs border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#0F172A] rounded-lg p-2 text-slate-900 dark:text-[#F8FAFC] placeholder-slate-400 dark:placeholder-slate-500 focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:outline-hidden"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1">
                     Priority
                   </label>
                   <select
                     value={newPriority}
                     onChange={(e) => setNewPriority(e.target.value as 'URGENT' | 'MEDIUM' | 'LOW')}
-                    className="w-full text-xs border border-slate-200 rounded-lg p-2 bg-white text-slate-900 focus:border-slate-900 focus:outline-hidden cursor-pointer"
+                    className="w-full text-xs border border-slate-200 dark:border-[#334155] rounded-lg p-2 bg-white dark:bg-[#0F172A] text-slate-900 dark:text-[#F8FAFC] focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:outline-hidden cursor-pointer"
                   >
-                    <option value="URGENT">URGENT (2h / 9h)</option>
-                    <option value="MEDIUM">MEDIUM (4.5h / 27h)</option>
-                    <option value="LOW">LOW (9h / 45h)</option>
+                    <option value="URGENT" className="dark:bg-[#111827]">URGENT (2h / 9h)</option>
+                    <option value="MEDIUM" className="dark:bg-[#111827]">MEDIUM (4.5h / 27h)</option>
+                    <option value="LOW" className="dark:bg-[#111827]">LOW (9h / 45h)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1">
                     Customer Account
                   </label>
                   <select
                     value={newCustomerId}
                     onChange={(e) => setNewCustomerId(Number(e.target.value))}
-                    className="w-full text-xs border border-slate-200 rounded-lg p-2 bg-white text-slate-900 focus:border-slate-900 focus:outline-hidden cursor-pointer"
+                    className="w-full text-xs border border-slate-200 dark:border-[#334155] rounded-lg p-2 bg-white dark:bg-[#0F172A] text-slate-900 dark:text-[#F8FAFC] focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:outline-hidden cursor-pointer"
                   >
-                    <option value={4}>Alex Chen (Acme)</option>
-                    <option value={5}>Sara Khan (Globex)</option>
-                    <option value={6}>Vikram Singh (Initech)</option>
+                    <option value={4} className="dark:bg-[#111827]">Alex Chen (Acme)</option>
+                    <option value={5} className="dark:bg-[#111827]">Sara Khan (Globex)</option>
+                    <option value={6} className="dark:bg-[#111827]">Vikram Singh (Initech)</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1">
                   Description
                 </label>
                 <textarea
@@ -1331,22 +1334,22 @@ export default function AgentDashboard() {
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   placeholder="Describe the issue in detail..."
-                  className="w-full text-xs border border-slate-200 rounded-lg p-2 text-slate-900 focus:border-slate-900 focus:outline-hidden resize-none font-sans"
+                  className="w-full text-xs border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#0F172A] rounded-lg p-2 text-slate-900 dark:text-[#F8FAFC] placeholder-slate-400 dark:placeholder-slate-500 focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:outline-hidden resize-none font-sans"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-[#1E293B]">
                 <button
                   type="button"
                   onClick={() => setShowNewModal(false)}
-                  className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAction}
-                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-md text-xs font-medium border border-slate-800 shadow-2xs transition cursor-pointer"
+                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] disabled:opacity-50 text-white rounded-md text-xs font-medium border border-slate-800 dark:border-[#F8FAFC] shadow-2xs transition cursor-pointer"
                 >
                   {submittingAction ? 'Creating...' : 'Create Ticket'}
                 </button>

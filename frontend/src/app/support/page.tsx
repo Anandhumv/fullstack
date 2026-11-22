@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import ThemeToggle from '../components/ThemeToggle';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -186,31 +187,31 @@ export default function CustomerSupportPortal() {
     switch (status) {
       case 'OPEN':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200 tabular-nums">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30 tabular-nums">
             Open
           </span>
         );
       case 'WAITING_ON_CUSTOMER':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] tabular-nums">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] dark:bg-[rgba(245,158,11,0.14)] dark:text-[#FCD34D] dark:border-[rgba(245,158,11,0.3)] tabular-nums">
             Waiting on You
           </span>
         );
       case 'RESOLVED':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] tabular-nums">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] dark:bg-[rgba(16,185,129,0.14)] dark:text-[#6EE7B7] dark:border-[rgba(16,185,129,0.3)] tabular-nums">
             Resolved
           </span>
         );
       case 'CLOSED':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 tabular-nums">
             Closed
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 tabular-nums">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 tabular-nums">
             {status}
           </span>
         );
@@ -218,25 +219,26 @@ export default function CustomerSupportPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] flex flex-col font-sans transition-colors">
       {/* Top Navbar */}
-      <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <header className="h-14 bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-[#1E293B] px-6 flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-slate-900 border border-slate-800 text-white font-bold text-xs flex items-center justify-center tracking-tight shadow-2xs">
+          <div className="w-7 h-7 rounded-md bg-slate-900 dark:bg-[#0F172A] border border-slate-800 dark:border-[#334155] text-white font-bold text-xs flex items-center justify-center tracking-tight shadow-2xs">
             AS
           </div>
-          <span className="font-semibold text-slate-900 text-sm tracking-[-0.02em]">
+          <span className="font-semibold text-slate-900 dark:text-[#F8FAFC] text-sm tracking-[-0.02em]">
             Arvo Systems Support
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+          <span className="text-xs text-slate-500 dark:text-[#94A3B8] font-medium hidden sm:inline">
             Public Support Desk
           </span>
+          <ThemeToggle />
           <Link
             href="/login"
-            className="text-xs text-slate-600 hover:text-slate-900 font-medium px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
+            className="text-xs text-slate-600 dark:text-[#F8FAFC] hover:text-slate-900 font-medium px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#0F172A] hover:bg-slate-50 dark:hover:bg-[#1E293B] transition shadow-2xs"
           >
             Agent Sign In
           </Link>
@@ -247,21 +249,21 @@ export default function CustomerSupportPortal() {
       <main className="flex-1 flex flex-col items-center justify-start px-4 py-10 sm:py-14">
         {!submittedTicket ? (
           /* Form Card */
-          <div className="max-w-[620px] w-full bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-7 sm:p-9">
+          <div className="max-w-[620px] w-full bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-[#1E293B] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-7 sm:p-9 transition-colors">
             {/* Header */}
-            <div className="mb-7 pb-5 border-b border-slate-100">
-              <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-900">
+            <div className="mb-7 pb-5 border-b border-slate-100 dark:border-[#1E293B]">
+              <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-900 dark:text-[#F8FAFC]">
                 Contact Support
               </h1>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
                 We respond within working hours (Mon–Fri, 09:30–18:30 IST).
               </p>
             </div>
 
             {/* Error banner */}
             {error && (
-              <div className="mb-5 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-start gap-2">
-                <svg className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <div className="mb-5 p-3 bg-rose-50 dark:bg-[rgba(239,68,68,0.14)] border border-rose-200 dark:border-[rgba(239,68,68,0.3)] text-rose-700 dark:text-[#FCA5A5] text-xs rounded-lg flex items-start gap-2">
+                <svg className="w-4 h-4 text-rose-600 dark:text-[#FCA5A5] shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
                 <span>{error}</span>
@@ -272,7 +274,7 @@ export default function CustomerSupportPortal() {
               {/* Name & Email */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="user-name" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                  <label htmlFor="user-name" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1.5">
                     Your Name
                   </label>
                   <input
@@ -282,12 +284,12 @@ export default function CustomerSupportPortal() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Alex Chen"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
+                    className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="user-email" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                  <label htmlFor="user-email" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1.5">
                     Work Email
                   </label>
                   <input
@@ -297,15 +299,15 @@ export default function CustomerSupportPortal() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="alex@company.com"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
+                    className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition shadow-2xs"
                   />
                 </div>
               </div>
 
               {/* Company */}
               <div>
-                <label htmlFor="user-company" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
-                  Company Name <span className="font-normal text-slate-400 lowercase">(optional)</span>
+                <label htmlFor="user-company" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1.5">
+                  Company Name <span className="font-normal text-slate-400 dark:text-slate-500 lowercase">(optional)</span>
                 </label>
                 <input
                   id="user-company"
@@ -313,13 +315,13 @@ export default function CustomerSupportPortal() {
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Acme Inc."
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
+                  className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition shadow-2xs"
                 />
               </div>
 
               {/* Severity Selection Cards */}
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-2">
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-2">
                   Impact Level
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -328,25 +330,27 @@ export default function CustomerSupportPortal() {
                     onClick={() => setImpact('URGENT')}
                     className={`p-3.5 rounded-lg border transition cursor-pointer flex flex-col justify-between ${
                       impact === 'URGENT'
-                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900 dark:border-[#F8FAFC] dark:bg-[#1E293B] dark:ring-1 dark:ring-[#F8FAFC]'
+                        : 'border-slate-200 bg-white hover:border-slate-300 dark:border-[#1E293B] dark:bg-[#0F172A]/50 dark:hover:border-[#334155]'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-slate-900">Critical</span>
+                        <span className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">Critical</span>
                         <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                          impact === 'URGENT' ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'
+                          impact === 'URGENT'
+                            ? 'border-slate-900 bg-slate-900 dark:border-[#F8FAFC] dark:bg-[#F8FAFC]'
+                            : 'border-slate-300 bg-white dark:border-[#334155] dark:bg-[#0F172A]'
                         }`}>
-                          {impact === 'URGENT' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          {impact === 'URGENT' && <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-[#0F172A]" />}
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
+                      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug">
                         Completely down or blocking work
                       </p>
                     </div>
-                    <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <span className="inline-block text-[10px] font-medium text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded tabular-nums">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-[#1E293B]">
+                      <span className="inline-block text-[10px] font-medium text-rose-700 bg-rose-50 border border-rose-200 dark:bg-[rgba(239,68,68,0.14)] dark:text-[#FCA5A5] dark:border-[rgba(239,68,68,0.3)] px-1.5 py-0.5 rounded tabular-nums">
                         Urgent SLA (2h)
                       </span>
                     </div>
@@ -357,25 +361,27 @@ export default function CustomerSupportPortal() {
                     onClick={() => setImpact('MEDIUM')}
                     className={`p-3.5 rounded-lg border transition cursor-pointer flex flex-col justify-between ${
                       impact === 'MEDIUM'
-                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900 dark:border-[#F8FAFC] dark:bg-[#1E293B] dark:ring-1 dark:ring-[#F8FAFC]'
+                        : 'border-slate-200 bg-white hover:border-slate-300 dark:border-[#1E293B] dark:bg-[#0F172A]/50 dark:hover:border-[#334155]'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-slate-900">Standard</span>
+                        <span className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">Standard</span>
                         <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                          impact === 'MEDIUM' ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'
+                          impact === 'MEDIUM'
+                            ? 'border-slate-900 bg-slate-900 dark:border-[#F8FAFC] dark:bg-[#F8FAFC]'
+                            : 'border-slate-300 bg-white dark:border-[#334155] dark:bg-[#0F172A]'
                         }`}>
-                          {impact === 'MEDIUM' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          {impact === 'MEDIUM' && <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-[#0F172A]" />}
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
+                      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug">
                         Partly affected with workaround
                       </p>
                     </div>
-                    <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <span className="inline-block text-[10px] font-medium text-amber-800 bg-[#FFFBEB] border border-[#FDE68A] px-1.5 py-0.5 rounded tabular-nums">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-[#1E293B]">
+                      <span className="inline-block text-[10px] font-medium text-amber-800 bg-[#FFFBEB] border border-[#FDE68A] dark:bg-[rgba(245,158,11,0.14)] dark:text-[#FCD34D] dark:border-[rgba(245,158,11,0.3)] px-1.5 py-0.5 rounded tabular-nums">
                         Medium SLA (4.5h)
                       </span>
                     </div>
@@ -386,25 +392,27 @@ export default function CustomerSupportPortal() {
                     onClick={() => setImpact('LOW')}
                     className={`p-3.5 rounded-lg border transition cursor-pointer flex flex-col justify-between ${
                       impact === 'LOW'
-                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900 dark:border-[#F8FAFC] dark:bg-[#1E293B] dark:ring-1 dark:ring-[#F8FAFC]'
+                        : 'border-slate-200 bg-white hover:border-slate-300 dark:border-[#1E293B] dark:bg-[#0F172A]/50 dark:hover:border-[#334155]'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-slate-900">Inquiry</span>
+                        <span className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">Inquiry</span>
                         <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                          impact === 'LOW' ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'
+                          impact === 'LOW'
+                            ? 'border-slate-900 bg-slate-900 dark:border-[#F8FAFC] dark:bg-[#F8FAFC]'
+                            : 'border-slate-300 bg-white dark:border-[#334155] dark:bg-[#0F172A]'
                         }`}>
-                          {impact === 'LOW' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          {impact === 'LOW' && <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-[#0F172A]" />}
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
+                      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug">
                         Question, billing, or general request
                       </p>
                     </div>
-                    <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <span className="inline-block text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded tabular-nums">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-[#1E293B]">
+                      <span className="inline-block text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 dark:bg-[rgba(16,185,129,0.14)] dark:text-[#6EE7B7] dark:border-[rgba(16,185,129,0.3)] px-1.5 py-0.5 rounded tabular-nums">
                         Low SLA (9h)
                       </span>
                     </div>
@@ -414,7 +422,7 @@ export default function CustomerSupportPortal() {
 
               {/* Subject */}
               <div>
-                <label htmlFor="ticket-subject" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                <label htmlFor="ticket-subject" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1.5">
                   Subject Summary
                 </label>
                 <input
@@ -424,13 +432,13 @@ export default function CustomerSupportPortal() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g. Production API returning 500 on auth token refresh"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
+                  className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition shadow-2xs"
                 />
               </div>
 
               {/* Message */}
               <div>
-                <label htmlFor="ticket-message" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                <label htmlFor="ticket-message" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1.5">
                   Detailed Description
                 </label>
                 <textarea
@@ -440,7 +448,7 @@ export default function CustomerSupportPortal() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Provide context, reproduction steps, or relevant identifiers..."
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs font-sans resize-y"
+                  className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition shadow-2xs font-sans resize-y"
                 />
               </div>
 
@@ -448,11 +456,11 @@ export default function CustomerSupportPortal() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-medium text-sm rounded-lg border border-slate-800 shadow-2xs transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] text-white font-medium text-sm rounded-lg border border-slate-800 dark:border-[#F8FAFC] shadow-2xs transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
-                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3.5 w-3.5 text-current" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
@@ -466,37 +474,37 @@ export default function CustomerSupportPortal() {
           </div>
         ) : (
           /* Confirmation Screen */
-          <div className="max-w-[620px] w-full bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-7 sm:p-9">
-            <div className="flex flex-col items-center text-center pb-6 border-b border-slate-100">
-              <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mb-3">
+          <div className="max-w-[620px] w-full bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-[#1E293B] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-7 sm:p-9 transition-colors">
+            <div className="flex flex-col items-center text-center pb-6 border-b border-slate-100 dark:border-[#1E293B]">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mb-3">
                 <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold tracking-[-0.02em] text-slate-900">
+              <h2 className="text-xl font-bold tracking-[-0.02em] text-slate-900 dark:text-[#F8FAFC]">
                 Support Request Received
               </h2>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm">
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1 max-w-sm">
                 Your ticket has been queued for our support team.
               </p>
-              <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs font-semibold tabular-nums">
+              <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] text-slate-800 dark:text-[#F8FAFC] font-mono text-xs font-semibold tabular-nums">
                 Ticket #{submittedTicket.id}
               </div>
             </div>
 
             {/* Ticket details summary */}
-            <div className="py-5 space-y-2 text-xs border-b border-slate-100">
+            <div className="py-5 space-y-2 text-xs border-b border-slate-100 dark:border-[#1E293B]">
               <div className="flex justify-between py-1">
-                <span className="text-slate-500">Subject:</span>
-                <span className="font-medium text-slate-900 text-right max-w-[320px] truncate">{submittedTicket.subject}</span>
+                <span className="text-slate-500 dark:text-[#64748B]">Subject:</span>
+                <span className="font-medium text-slate-900 dark:text-[#F8FAFC] text-right max-w-[320px] truncate">{submittedTicket.subject}</span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-slate-500">Priority:</span>
-                <span className="font-medium text-slate-900">{submittedTicket.priority}</span>
+                <span className="text-slate-500 dark:text-[#64748B]">Priority:</span>
+                <span className="font-medium text-slate-900 dark:text-[#F8FAFC]">{submittedTicket.priority}</span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-slate-500">SLA Window:</span>
-                <span className="text-slate-700 tabular-nums">Mon–Fri, 09:30–18:30 IST</span>
+                <span className="text-slate-500 dark:text-[#64748B]">SLA Window:</span>
+                <span className="text-slate-700 dark:text-[#94A3B8] tabular-nums">Mon–Fri, 09:30–18:30 IST</span>
               </div>
             </div>
 
@@ -505,7 +513,7 @@ export default function CustomerSupportPortal() {
               <button
                 type="button"
                 onClick={() => fetchCustomerTicketStatus(submittedTicket.id)}
-                className="w-full py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg border border-slate-800 shadow-2xs transition cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-2 px-4 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] text-white font-medium text-xs rounded-lg border border-slate-800 dark:border-[#F8FAFC] shadow-2xs transition cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>Inspect Public Ticket Status</span>
               </button>
@@ -513,7 +521,7 @@ export default function CustomerSupportPortal() {
               <button
                 type="button"
                 onClick={handleResetForm}
-                className="w-full py-2 px-4 bg-white hover:bg-slate-50 text-slate-600 font-medium text-xs rounded-lg border border-slate-200 transition cursor-pointer"
+                className="w-full py-2 px-4 bg-white dark:bg-[#0F172A] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8] font-medium text-xs rounded-lg border border-slate-200 dark:border-[#334155] transition cursor-pointer"
               >
                 Submit another request
               </button>
@@ -521,10 +529,10 @@ export default function CustomerSupportPortal() {
 
             {/* Zero-Leak Status Inspector */}
             {inspectingStatus && (
-              <div className="mt-7 pt-6 border-t border-slate-200">
+              <div className="mt-7 pt-6 border-t border-slate-200 dark:border-[#1E293B]">
                 <div className="flex items-center justify-between mb-3.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-900">
+                    <span className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">
                       Ticket #{submittedTicket.id}
                     </span>
                     {customerData && renderStatusBadge(customerData.ticket.status)}
@@ -532,15 +540,15 @@ export default function CustomerSupportPortal() {
                   <button
                     onClick={() => fetchCustomerTicketStatus(submittedTicket.id)}
                     disabled={loadingStatus}
-                    className="text-[11px] text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer flex items-center gap-1"
+                    className="text-[11px] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] font-medium transition cursor-pointer flex items-center gap-1"
                   >
                     <span>{loadingStatus ? 'Refreshing...' : 'Refresh'}</span>
                   </button>
                 </div>
 
                 {/* Zero Leak Banner */}
-                <div className="mb-4 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-xs flex items-center gap-2">
-                  <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div className="mb-4 p-2.5 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-600 dark:text-[#94A3B8] text-xs flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                   <span>
@@ -555,22 +563,22 @@ export default function CustomerSupportPortal() {
                 ) : customerData ? (
                   <div className="space-y-3.5">
                     {/* Original Request description */}
-                    <div className="bg-slate-50/70 p-3.5 rounded-lg border border-slate-200/80">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-slate-400 mb-1">
+                    <div className="bg-slate-50/70 dark:bg-[#0F172A] p-3.5 rounded-lg border border-slate-200/80 dark:border-[#1E293B]">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-slate-400 dark:text-[#64748B] mb-1">
                         Original Request
                       </div>
-                      <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                      <p className="text-xs text-slate-700 dark:text-[#94A3B8] whitespace-pre-wrap leading-relaxed">
                         {customerData.ticket.description}
                       </p>
                     </div>
 
                     {/* Messages Thread */}
                     <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-2">
                         Message History ({customerData.public_messages.length})
                       </div>
                       {customerData.public_messages.length === 0 ? (
-                        <div className="p-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-500 text-center">
+                        <div className="p-3 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1E293B] rounded-lg text-xs text-slate-500 dark:text-[#94A3B8] text-center">
                           No replies yet. An agent will respond within working hours.
                         </div>
                       ) : (
@@ -582,24 +590,24 @@ export default function CustomerSupportPortal() {
                                 key={msg.id}
                                 className={`p-3 rounded-lg border text-xs ${
                                   isAgent
-                                    ? 'bg-slate-50 border-slate-200 text-slate-900'
-                                    : 'bg-white border-slate-200 text-slate-800'
+                                    ? 'bg-slate-50 dark:bg-[#0F172A] border-slate-200 dark:border-[#1E293B] text-slate-900 dark:text-[#F8FAFC]'
+                                    : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1E293B] text-slate-800 dark:text-[#F8FAFC]'
                                 }`}
                               >
                                 <div className="flex items-center justify-between mb-1 text-[11px]">
-                                  <span className="font-semibold text-slate-900">
+                                  <span className="font-semibold text-slate-900 dark:text-[#F8FAFC]">
                                     {msg.sender_name || (isAgent ? 'Support Agent' : 'You')}
                                     {isAgent && (
-                                      <span className="ml-1.5 px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 text-[9px] uppercase font-bold">
+                                      <span className="ml-1.5 px-1.5 py-0.2 rounded bg-slate-200 dark:bg-[#1E293B] text-slate-700 dark:text-slate-300 text-[9px] uppercase font-bold">
                                         Staff
                                       </span>
                                     )}
                                   </span>
-                                  <span className="text-slate-400 text-[10px] tabular-nums">
+                                  <span className="text-slate-400 dark:text-[#64748B] text-[10px] tabular-nums">
                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 </div>
-                                <p className="whitespace-pre-wrap leading-relaxed text-slate-700">{msg.body}</p>
+                                <p className="whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-[#94A3B8]">{msg.body}</p>
                               </div>
                             );
                           })}
@@ -610,7 +618,7 @@ export default function CustomerSupportPortal() {
                     {/* Reply Form */}
                     <form onSubmit={handleSendCustomerReply} className="mt-3">
                       {replySuccess && (
-                        <div className="mb-2 p-2 bg-emerald-50 text-emerald-700 text-xs rounded border border-emerald-200">
+                        <div className="mb-2 p-2 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs rounded border border-emerald-200 dark:border-emerald-500/30">
                           {replySuccess}
                         </div>
                       )}
@@ -619,13 +627,13 @@ export default function CustomerSupportPortal() {
                         value={customerReply}
                         onChange={(e) => setCustomerReply(e.target.value)}
                         placeholder="Add a reply or extra information..."
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition font-sans"
+                        className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-xs focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition font-sans"
                       />
                       <div className="mt-1.5 flex justify-end">
                         <button
                           type="submit"
                           disabled={sendingReply || !customerReply.trim()}
-                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-md border border-slate-800 shadow-2xs transition disabled:opacity-50 cursor-pointer"
+                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] text-white text-xs font-medium rounded-md border border-slate-800 dark:border-[#F8FAFC] shadow-2xs transition disabled:opacity-50 cursor-pointer"
                         >
                           {sendingReply ? 'Sending...' : 'Send Message'}
                         </button>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ThemeToggle from '../components/ThemeToggle';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -93,30 +94,35 @@ export default function AgentLoginPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col justify-center items-center px-4 py-12 sm:px-6 relative overflow-hidden bg-[#0F172A]"
+      className="min-h-screen flex flex-col justify-center items-center px-4 py-12 sm:px-6 relative overflow-hidden bg-[#0F172A] dark:bg-[#0B0F19]"
       style={{
         background: 'radial-gradient(circle at 50% 0%, #1E293B 0%, #0F172A 70%)',
       }}
     >
+      {/* Top Right Theme Switcher */}
+      <div className="absolute top-5 right-5 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Container Card */}
-      <div className="relative z-10 max-w-[400px] w-full bg-white rounded-xl border border-slate-200 shadow-xl p-8">
+      <div className="relative z-10 max-w-[400px] w-full bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-[#1E293B] shadow-xl p-8 transition-colors">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-7">
-          <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 text-white flex items-center justify-center font-bold text-sm tracking-tight mb-3.5 shadow-2xs">
+          <div className="w-10 h-10 rounded-lg bg-slate-900 dark:bg-[#0F172A] border border-slate-800 dark:border-[#334155] text-white flex items-center justify-center font-bold text-sm tracking-tight mb-3.5 shadow-2xs">
             FD
           </div>
-          <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-900">
+          <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-900 dark:text-[#F8FAFC]">
             Frontdesk
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
             Arvo Systems Support &bull; Staff Authentication
           </p>
         </div>
 
         {/* Error message */}
         {error && (
-          <div className="mb-5 p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2 text-xs text-rose-700">
-            <svg className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+          <div className="mb-5 p-3 bg-rose-50 dark:bg-[rgba(239,68,68,0.14)] border border-rose-200 dark:border-[rgba(239,68,68,0.3)] rounded-lg flex items-start gap-2 text-xs text-rose-700 dark:text-[#FCA5A5]">
+            <svg className="w-4 h-4 text-rose-600 dark:text-[#FCA5A5] shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <span>{error}</span>
@@ -126,7 +132,7 @@ export default function AgentLoginPage() {
         {/* Login form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="agent-email" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+            <label htmlFor="agent-email" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B] mb-1.5">
               Email Address
             </label>
             <input
@@ -137,19 +143,19 @@ export default function AgentLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="agent@frontdesk.test"
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
+              className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition shadow-2xs"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="agent-password" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+              <label htmlFor="agent-password" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B]">
                 Password
               </label>
               <button
                 type="button"
                 onClick={() => setShowPassword((p) => !p)}
-                className="text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer"
+                className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] cursor-pointer"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
@@ -162,18 +168,18 @@ export default function AgentLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
+              className="w-full px-3 py-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg text-slate-900 dark:text-[#F8FAFC] text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-slate-900 dark:focus:border-[#F8FAFC] focus:ring-1 focus:ring-slate-900 dark:focus:ring-[#F8FAFC]/20 transition shadow-2xs"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-medium text-sm rounded-lg border border-slate-800 shadow-2xs transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full mt-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] text-white font-medium text-sm rounded-lg border border-slate-800 dark:border-[#F8FAFC] shadow-2xs transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-3.5 w-3.5 text-current" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
@@ -186,12 +192,12 @@ export default function AgentLoginPage() {
         </form>
 
         {/* Demo credentials quick-fill */}
-        <div className="mt-6 pt-5 border-t border-slate-100">
+        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-[#1E293B]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 dark:text-[#64748B]">
               Demo Credentials
             </span>
-            <span className="text-[11px] font-mono text-slate-400">
+            <span className="text-[11px] font-mono text-slate-400 dark:text-[#64748B]">
               pw: frontdesk-agent
             </span>
           </div>
@@ -201,12 +207,12 @@ export default function AgentLoginPage() {
                 key={ag.id}
                 type="button"
                 onClick={() => handleFillDemo(ag.email)}
-                className="w-full text-left px-2.5 py-1.5 rounded-md border border-slate-200/80 bg-slate-50/60 hover:bg-slate-100 hover:border-slate-300 transition flex items-center justify-between text-xs cursor-pointer group"
+                className="w-full text-left px-2.5 py-1.5 rounded-md border border-slate-200/80 dark:border-[#1E293B] bg-slate-50/60 dark:bg-[#0F172A] hover:bg-slate-100 dark:hover:bg-[#1E293B] hover:border-slate-300 dark:hover:border-[#334155] transition flex items-center justify-between text-xs cursor-pointer group"
               >
-                <span className="font-medium text-slate-700 group-hover:text-slate-900">
+                <span className="font-medium text-slate-700 dark:text-[#94A3B8] group-hover:text-slate-900 dark:group-hover:text-[#F8FAFC]">
                   {ag.name}
                 </span>
-                <span className="font-mono text-[11px] text-slate-500 tabular-nums">
+                <span className="font-mono text-[11px] text-slate-500 dark:text-[#64748B] tabular-nums">
                   {ag.email}
                 </span>
               </button>
@@ -215,11 +221,11 @@ export default function AgentLoginPage() {
         </div>
 
         {/* Footer navigation */}
-        <div className="mt-6 text-center text-xs text-slate-500">
+        <div className="mt-6 text-center text-xs text-slate-500 dark:text-[#64748B]">
           Customer needing assistance?{' '}
           <Link
             href="/support"
-            className="text-slate-900 font-medium hover:underline transition"
+            className="text-slate-900 dark:text-[#F8FAFC] font-medium hover:underline transition"
           >
             Contact support &rarr;
           </Link>
