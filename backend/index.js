@@ -44,6 +44,14 @@ app.use((err, req, res, next) => {
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Frontdesk backend server running on port ${PORT}`);
+
+    // Background process: Periodic auto-closure for tickets waiting > 5 working days
+    const FIFTEEN_MINUTES = 15 * 60 * 1000;
+    setInterval(() => {
+      ticketsRouter.autoCloseStaleTickets()
+        .then(() => console.log('[Background Job] Stale ticket auto-close evaluation completed.'))
+        .catch((err) => console.error('[Background Job] Stale ticket check failed:', err.message));
+    }, FIFTEEN_MINUTES);
   });
 }
 

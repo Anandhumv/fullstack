@@ -617,5 +617,6 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+router.autoCloseStaleTickets = autoCloseStaleTickets;
 module.exports = router;
 
