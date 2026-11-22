@@ -36,13 +36,13 @@ export default function AgentLoginPage() {
     const cleanPassword = password.trim();
 
     if (!cleanEmail) {
-      setError('Please enter your agent email address.');
+      setError('Enter your agent email address.');
       setLoading(false);
       return;
     }
 
     if (!cleanPassword) {
-      setError('Please enter your password.');
+      setError('Enter your password.');
       setLoading(false);
       return;
     }
@@ -54,7 +54,6 @@ export default function AgentLoginPage() {
     }
 
     try {
-      // Fetch current agents list from backend, with DEMO_AGENTS fallback
       let agentList = DEMO_AGENTS;
       try {
         const res = await fetch(`${API_BASE}/api/agents`);
@@ -65,7 +64,7 @@ export default function AgentLoginPage() {
           }
         }
       } catch {
-        // Use DEMO_AGENTS fallback if network/cold start
+        // Fallback to DEMO_AGENTS if offline or cold start
       }
 
       const matchedAgent = agentList.find(
@@ -73,18 +72,15 @@ export default function AgentLoginPage() {
       );
 
       if (!matchedAgent) {
-        setError('Agent email not recognized. Please use one of the seeded demo agent accounts.');
+        setError('Agent email not recognized. Use one of the demo accounts below.');
         setLoading(false);
         return;
       }
 
-      // Save logged-in agent to localStorage
       localStorage.setItem('frontdesk_agent', JSON.stringify(matchedAgent));
-
-      // Redirect to the Agent Dashboard
       router.push('/');
     } catch {
-      setError('An error occurred during login. Please try again.');
+      setError('An error occurred during authentication. Please retry.');
       setLoading(false);
     }
   };
@@ -96,32 +92,37 @@ export default function AgentLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center px-4 py-12 sm:px-6 lg:px-8">
-      {/* Centered White Card */}
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-md border border-slate-200/80 p-8 sm:p-10">
-        {/* Brand Icon & Heading */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 text-white font-black text-2xl flex items-center justify-center mx-auto mb-3 shadow-xs">
-            F
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-12 sm:px-6">
+      {/* Container Card */}
+      <div className="max-w-[400px] w-full bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-8">
+        {/* Header */}
+        <div className="flex flex-col items-center text-center mb-7">
+          <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 text-white flex items-center justify-center font-bold text-sm tracking-tight mb-3.5 shadow-2xs">
+            FD
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Frontdesk</h1>
-          <p className="text-sm text-slate-500 mt-1 font-medium">Arvo Systems support: agent login</p>
+          <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-900">
+            Frontdesk
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Arvo Systems Support &bull; Staff Authentication
+          </p>
         </div>
 
-        {/* Error Alert */}
+        {/* Error message */}
         {error && (
-          <div className="mb-6 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-start gap-2.5">
-            <span className="text-red-500 font-bold shrink-0">⚠️</span>
+          <div className="mb-5 p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2 text-xs text-rose-700">
+            <svg className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
             <span>{error}</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email input */}
+        {/* Login form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="agent-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Email
+            <label htmlFor="agent-email" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+              Email Address
             </label>
             <input
               id="agent-email"
@@ -130,74 +131,77 @@ export default function AgentLoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. meera@frontdesk.test"
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              placeholder="agent@frontdesk.test"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
             />
           </div>
 
-          {/* Password input with Show/Hide toggle */}
           <div>
-            <label htmlFor="agent-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="agent-password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-3.5 py-2.5 pr-20 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              />
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor="agent-password" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                Password
+              </label>
               <button
                 type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                onClick={() => setShowPassword((p) => !p)}
+                className="text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
+            <input
+              id="agent-password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••••"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
+            />
           </div>
 
-          {/* Full-width blue Log in button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-xs transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+            className="w-full mt-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-medium text-sm rounded-lg border border-slate-800 shadow-2xs transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                <span>Logging in...</span>
+                <span>Authenticating...</span>
               </>
             ) : (
-              <span>Log in</span>
+              <span>Sign In to Dashboard</span>
             )}
           </button>
         </form>
 
-        {/* Helper text showing seeded demo agents and demo password */}
-        <div className="mt-6 pt-5 border-t border-slate-200">
-          <p className="text-xs font-semibold text-slate-700 mb-2">
-            Demo Credentials <span className="font-normal text-slate-500">(password: <code className="bg-slate-100 text-blue-700 font-mono px-1.5 py-0.5 rounded text-[11px] font-bold">frontdesk-agent</code>)</span>:
-          </p>
+        {/* Demo credentials quick-fill */}
+        <div className="mt-6 pt-5 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+              Demo Credentials
+            </span>
+            <span className="text-[11px] font-mono text-slate-400">
+              pw: frontdesk-agent
+            </span>
+          </div>
           <div className="space-y-1.5">
             {DEMO_AGENTS.map((ag) => (
               <button
                 key={ag.id}
                 type="button"
                 onClick={() => handleFillDemo(ag.email)}
-                className="w-full text-left px-2.5 py-1.5 rounded-md hover:bg-blue-50/80 transition flex items-center justify-between text-xs group cursor-pointer border border-transparent hover:border-blue-200"
+                className="w-full text-left px-2.5 py-1.5 rounded-md border border-slate-200/80 bg-slate-50/60 hover:bg-slate-100 hover:border-slate-300 transition flex items-center justify-between text-xs cursor-pointer group"
               >
-                <span className="font-medium text-slate-700 group-hover:text-blue-700">
+                <span className="font-medium text-slate-700 group-hover:text-slate-900">
                   {ag.name}
                 </span>
-                <span className="font-mono text-slate-500 text-[11px] group-hover:text-blue-600">
+                <span className="font-mono text-[11px] text-slate-500 tabular-nums">
                   {ag.email}
                 </span>
               </button>
@@ -205,18 +209,17 @@ export default function AgentLoginPage() {
           </div>
         </div>
 
-        {/* Bottom link: Not an agent? Customer portal: contact support */}
-        <div className="mt-6 text-center text-xs text-slate-600">
-          Not an agent?{' '}
+        {/* Footer navigation */}
+        <div className="mt-6 text-center text-xs text-slate-500">
+          Customer needing assistance?{' '}
           <Link
             href="/support"
-            className="text-blue-600 hover:text-blue-800 font-semibold underline underline-offset-2 transition"
+            className="text-slate-900 font-medium hover:underline transition"
           >
-            Customer portal: contact support →
+            Contact support &rarr;
           </Link>
         </div>
       </div>
     </div>
   );
 }
-

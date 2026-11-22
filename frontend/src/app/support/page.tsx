@@ -42,7 +42,6 @@ interface CustomerViewData {
 }
 
 export default function CustomerSupportPortal() {
-  // Form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -50,12 +49,10 @@ export default function CustomerSupportPortal() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
 
-  // UI state
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittedTicket, setSubmittedTicket] = useState<SubmittedTicket | null>(null);
 
-  // Status inspection state
   const [inspectingStatus, setInspectingStatus] = useState(false);
   const [customerData, setCustomerData] = useState<CustomerViewData | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
@@ -72,15 +69,15 @@ export default function CustomerSupportPortal() {
       return;
     }
     if (!email.trim() || !email.includes('@')) {
-      setError('Please provide a valid email address.');
+      setError('Please provide a valid work email address.');
       return;
     }
     if (!subject.trim()) {
-      setError('Please provide a subject for your request.');
+      setError('Please provide a subject summary.');
       return;
     }
     if (!message.trim()) {
-      setError('Please describe your issue or message.');
+      setError('Please describe your issue or request.');
       return;
     }
 
@@ -164,8 +161,7 @@ export default function CustomerSupportPortal() {
       }
 
       setCustomerReply('');
-      setReplySuccess('Reply sent to support agents.');
-      // Refresh status view
+      setReplySuccess('Reply delivered to assigned support agent.');
       await fetchCustomerTicketStatus(submittedTicket.id);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -186,75 +182,98 @@ export default function CustomerSupportPortal() {
     setError(null);
   };
 
-  const getStatusBadge = (status: string) => {
+  const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'OPEN':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">Open</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200 tabular-nums">
+            Open
+          </span>
+        );
       case 'WAITING_ON_CUSTOMER':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">Waiting on Customer</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] tabular-nums">
+            Waiting on You
+          </span>
+        );
       case 'RESOLVED':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Resolved</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] tabular-nums">
+            Resolved
+          </span>
+        );
       case 'CLOSED':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800">Closed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+            Closed
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 tabular-nums">
+            {status}
+          </span>
+        );
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Top Bar */}
-      <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xs">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      {/* Top Navbar */}
+      <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-black text-base flex items-center justify-center shadow-xs">
-            A
+          <div className="w-7 h-7 rounded-md bg-slate-900 border border-slate-800 text-white font-bold text-xs flex items-center justify-center tracking-tight shadow-2xs">
+            AS
           </div>
-          <span className="font-bold text-slate-900 text-base sm:text-lg tracking-tight">
+          <span className="font-semibold text-slate-900 text-sm tracking-[-0.02em]">
             Arvo Systems Support
           </span>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4 text-xs font-medium">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-            New request
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+            Public Support Desk
           </span>
           <Link
             href="/login"
-            className="text-slate-600 hover:text-slate-900 px-2.5 py-1 rounded-md hover:bg-slate-100 transition"
+            className="text-xs text-slate-600 hover:text-slate-900 font-medium px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
           >
-            Agent login
+            Agent Sign In
           </Link>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-start px-4 py-8 sm:py-12">
+      {/* Main Container */}
+      <main className="flex-1 flex flex-col items-center justify-start px-4 py-10 sm:py-14">
         {!submittedTicket ? (
-          /* Clean White Card: Contact Support Form */
-          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
+          /* Form Card */
+          <div className="max-w-[620px] w-full bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-7 sm:p-9">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Contact support</h1>
-              <p className="text-sm text-slate-500 mt-1 font-medium">
-                We reply within working hours (Mon–Fri, 09:30–18:30 IST).
+            <div className="mb-7 pb-5 border-b border-slate-100">
+              <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-900">
+                Contact Support
+              </h1>
+              <p className="text-xs text-slate-500 mt-1">
+                We respond within working hours (Mon–Fri, 09:30–18:30 IST).
               </p>
             </div>
 
-            {/* Error Message */}
+            {/* Error banner */}
             {error && (
-              <div className="mb-6 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-start gap-2.5">
-                <span className="text-red-500 font-bold shrink-0">⚠️</span>
+              <div className="mb-5 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-start gap-2">
+                <svg className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Your name and Email side-by-side */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Name & Email */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="user-name" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Your name <span className="text-red-500">*</span>
+                  <label htmlFor="user-name" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                    Your Name
                   </label>
                   <input
                     id="user-name"
@@ -262,14 +281,14 @@ export default function CustomerSupportPortal() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Alex Chen"
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    placeholder="Alex Chen"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="user-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Email address <span className="text-red-500">*</span>
+                  <label htmlFor="user-email" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                    Work Email
                   </label>
                   <input
                     id="user-email"
@@ -277,126 +296,126 @@ export default function CustomerSupportPortal() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. alex@example.com"
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    placeholder="alex@company.com"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
                   />
                 </div>
               </div>
 
-              {/* Company (optional) full-width input */}
+              {/* Company */}
               <div>
-                <label htmlFor="user-company" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Company <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                <label htmlFor="user-company" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                  Company Name <span className="font-normal text-slate-400 lowercase">(optional)</span>
                 </label>
                 <input
                   id="user-company"
                   type="text"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  placeholder="e.g. Acme Corporation"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  placeholder="Acme Inc."
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
                 />
               </div>
 
-              {/* How much is this affecting you? — 3 selectable radio cards */}
+              {/* Severity Selection Cards */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2.5">
-                  How much is this affecting you?
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-2">
+                  Impact Level
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Option 1: I can't work at all -> URGENT */}
-                  <label
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Card 1: Urgent */}
+                  <div
                     onClick={() => setImpact('URGENT')}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                    className={`p-3.5 rounded-lg border transition cursor-pointer flex flex-col justify-between ${
                       impact === 'URGENT'
-                        ? 'border-red-500 bg-red-50/50 shadow-xs'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-xs font-bold text-slate-900">I can&apos;t work at all</span>
-                      <input
-                        type="radio"
-                        name="impact"
-                        checked={impact === 'URGENT'}
-                        onChange={() => setImpact('URGENT')}
-                        className="text-red-600 focus:ring-red-500 mt-0.5 cursor-pointer"
-                      />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-900">Critical</span>
+                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                          impact === 'URGENT' ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'
+                        }`}>
+                          {impact === 'URGENT' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-snug">
+                        Completely down or blocking work
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 leading-snug">
-                      Something is down or blocking you completely
-                    </p>
-                    <div className="mt-3">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-700">
-                        Urgent SLA (4h)
+                    <div className="mt-2.5 pt-2 border-t border-slate-100">
+                      <span className="inline-block text-[10px] font-medium text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded tabular-nums">
+                        Urgent SLA (2h)
                       </span>
                     </div>
-                  </label>
+                  </div>
 
-                  {/* Option 2: Partly affected -> MEDIUM */}
-                  <label
+                  {/* Card 2: Medium */}
+                  <div
                     onClick={() => setImpact('MEDIUM')}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                    className={`p-3.5 rounded-lg border transition cursor-pointer flex flex-col justify-between ${
                       impact === 'MEDIUM'
-                        ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-xs font-bold text-slate-900">Partly affected</span>
-                      <input
-                        type="radio"
-                        name="impact"
-                        checked={impact === 'MEDIUM'}
-                        onChange={() => setImpact('MEDIUM')}
-                        className="text-blue-600 focus:ring-blue-500 mt-0.5 cursor-pointer"
-                      />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-900">Standard</span>
+                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                          impact === 'MEDIUM' ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'
+                        }`}>
+                          {impact === 'MEDIUM' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-snug">
+                        Partly affected with workaround
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 leading-snug">
-                      Something is broken but you can work around it
-                    </p>
-                    <div className="mt-3">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                        Medium SLA (16h)
+                    <div className="mt-2.5 pt-2 border-t border-slate-100">
+                      <span className="inline-block text-[10px] font-medium text-amber-800 bg-[#FFFBEB] border border-[#FDE68A] px-1.5 py-0.5 rounded tabular-nums">
+                        Medium SLA (4.5h)
                       </span>
                     </div>
-                  </label>
+                  </div>
 
-                  {/* Option 3: Just a question -> LOW */}
-                  <label
+                  {/* Card 3: Low */}
+                  <div
                     onClick={() => setImpact('LOW')}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                    className={`p-3.5 rounded-lg border transition cursor-pointer flex flex-col justify-between ${
                       impact === 'LOW'
-                        ? 'border-emerald-600 bg-emerald-50/50 shadow-xs'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-xs font-bold text-slate-900">Just a question</span>
-                      <input
-                        type="radio"
-                        name="impact"
-                        checked={impact === 'LOW'}
-                        onChange={() => setImpact('LOW')}
-                        className="text-emerald-600 focus:ring-emerald-500 mt-0.5 cursor-pointer"
-                      />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-900">Inquiry</span>
+                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                          impact === 'LOW' ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'
+                        }`}>
+                          {impact === 'LOW' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-snug">
+                        Question, billing, or general request
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 leading-snug">
-                      How-to, billing, or a general request
-                    </p>
-                    <div className="mt-3">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
-                        Low SLA (24h)
+                    <div className="mt-2.5 pt-2 border-t border-slate-100">
+                      <span className="inline-block text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded tabular-nums">
+                        Low SLA (9h)
                       </span>
                     </div>
-                  </label>
+                  </div>
                 </div>
               </div>
 
-              {/* Subject input */}
+              {/* Subject */}
               <div>
-                <label htmlFor="ticket-subject" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Subject <span className="text-red-500">*</span>
+                <label htmlFor="ticket-subject" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                  Subject Summary
                 </label>
                 <input
                   id="ticket-subject"
@@ -404,178 +423,183 @@ export default function CustomerSupportPortal() {
                   required
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g. Production API returning 500 error on checkout"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  placeholder="e.g. Production API returning 500 on auth token refresh"
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs"
                 />
               </div>
 
-              {/* Message textarea */}
+              {/* Message */}
               <div>
-                <label htmlFor="ticket-message" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Message <span className="text-red-500">*</span>
+                <label htmlFor="ticket-message" className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1.5">
+                  Detailed Description
                 </label>
                 <textarea
                   id="ticket-message"
                   required
-                  rows={5}
+                  rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Please describe the issue in detail, including steps to reproduce, relevant error logs, or links..."
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition font-sans"
+                  placeholder="Provide context, reproduction steps, or relevant identifiers..."
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs font-sans resize-y"
                 />
               </div>
 
-              {/* Blue Submit request button */}
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-medium text-sm rounded-lg border border-slate-800 shadow-2xs transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
-                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
-                    <span>Submitting request...</span>
+                    <span>Submitting Request...</span>
                   </>
                 ) : (
-                  <span>Submit request</span>
+                  <span>Submit Support Request</span>
                 )}
               </button>
             </form>
           </div>
         ) : (
           /* Confirmation Screen */
-          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
-            {/* Green Success Badge */}
-            <div className="flex flex-col items-center text-center pb-6 border-b border-slate-200">
-              <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl font-bold mb-3">
-                ✓
+          <div className="max-w-[620px] w-full bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-7 sm:p-9">
+            <div className="flex flex-col items-center text-center pb-6 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mb-3">
+                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
               </div>
-              <h2 className="text-2xl font-bold text-slate-900">Request submitted successfully</h2>
-              <p className="text-sm text-slate-500 mt-1 max-w-md">
-                We have received your support request and assigned it ticket ID:
+              <h2 className="text-xl font-bold tracking-[-0.02em] text-slate-900">
+                Support Request Received
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                Your ticket has been queued for our support team.
               </p>
-              <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 font-mono font-bold text-base">
-                #{submittedTicket.id}
+              <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs font-semibold tabular-nums">
+                Ticket #{submittedTicket.id}
               </div>
             </div>
 
-            {/* Submitted Ticket Summary */}
-            <div className="py-6 space-y-3 text-sm border-b border-slate-200">
+            {/* Ticket details summary */}
+            <div className="py-5 space-y-2 text-xs border-b border-slate-100">
               <div className="flex justify-between py-1">
                 <span className="text-slate-500">Subject:</span>
-                <span className="font-semibold text-slate-900 text-right max-w-sm truncate">{submittedTicket.subject}</span>
+                <span className="font-medium text-slate-900 text-right max-w-[320px] truncate">{submittedTicket.subject}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500">Priority:</span>
-                <span className="font-semibold text-slate-900">{submittedTicket.priority}</span>
+                <span className="font-medium text-slate-900">{submittedTicket.priority}</span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-slate-500">Operating SLA:</span>
-                <span className="text-slate-700 font-medium">Mon–Fri, 09:30–18:30 IST</span>
+                <span className="text-slate-500">SLA Window:</span>
+                <span className="text-slate-700 tabular-nums">Mon–Fri, 09:30–18:30 IST</span>
               </div>
             </div>
 
-            {/* Actions: View status or submit another */}
-            <div className="pt-6 space-y-3">
+            {/* Actions */}
+            <div className="pt-5 space-y-2.5">
               <button
                 type="button"
                 onClick={() => fetchCustomerTicketStatus(submittedTicket.id)}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg shadow-xs transition cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg border border-slate-800 shadow-2xs transition cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>View ticket status (Zero-Leak View)</span>
+                <span>Inspect Public Ticket Status</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleResetForm}
-                className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-lg transition cursor-pointer"
+                className="w-full py-2 px-4 bg-white hover:bg-slate-50 text-slate-600 font-medium text-xs rounded-lg border border-slate-200 transition cursor-pointer"
               >
                 Submit another request
               </button>
             </div>
 
-            {/* Zero-Leak Ticket Inspector Modal / Section */}
+            {/* Zero-Leak Status Inspector */}
             {inspectingStatus && (
-              <div className="mt-8 pt-6 border-t border-slate-200">
-                <div className="flex items-center justify-between mb-4">
+              <div className="mt-7 pt-6 border-t border-slate-200">
+                <div className="flex items-center justify-between mb-3.5">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-900 text-base">
-                      Customer Status: Ticket #{submittedTicket.id}
-                    </h3>
-                    {customerData && getStatusBadge(customerData.ticket.status)}
+                    <span className="text-xs font-semibold text-slate-900">
+                      Ticket #{submittedTicket.id}
+                    </span>
+                    {customerData && renderStatusBadge(customerData.ticket.status)}
                   </div>
                   <button
                     onClick={() => fetchCustomerTicketStatus(submittedTicket.id)}
                     disabled={loadingStatus}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                    className="text-[11px] text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer flex items-center gap-1"
                   >
-                    {loadingStatus ? 'Refreshing...' : '↻ Refresh'}
+                    <span>{loadingStatus ? 'Refreshing...' : 'Refresh'}</span>
                   </button>
                 </div>
 
                 {/* Zero Leak Banner */}
-                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs flex items-center gap-2">
-                  <span>🔒</span>
+                <div className="mb-4 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-xs flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
                   <span>
-                    <strong>Zero-Leak Guarantee:</strong> Only public messages and ticket details are accessible via this customer endpoint. Internal agent notes are never exposed.
+                    <strong>Zero-Leak Guarantee:</strong> Only public messages are transmitted on this endpoint. Private team notes are excluded.
                   </span>
                 </div>
 
                 {loadingStatus && !customerData ? (
-                  <div className="py-8 text-center text-slate-400 text-sm">
-                    Fetching ticket status...
+                  <div className="py-6 text-center text-slate-400 text-xs">
+                    Loading status...
                   </div>
                 ) : customerData ? (
-                  <div className="space-y-4">
-                    {/* Ticket Details Box */}
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                        Initial Request
+                  <div className="space-y-3.5">
+                    {/* Original Request description */}
+                    <div className="bg-slate-50/70 p-3.5 rounded-lg border border-slate-200/80">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-slate-400 mb-1">
+                        Original Request
                       </div>
-                      <p className="text-sm text-slate-800 whitespace-pre-wrap">
+                      <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
                         {customerData.ticket.description}
                       </p>
                     </div>
 
                     {/* Messages Thread */}
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-2">
                         Message History ({customerData.public_messages.length})
                       </div>
                       {customerData.public_messages.length === 0 ? (
-                        <div className="p-4 bg-slate-50 rounded-lg text-xs text-slate-500 text-center">
+                        <div className="p-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-500 text-center">
                           No replies yet. An agent will respond within working hours.
                         </div>
                       ) : (
-                        <div className="space-y-2.5">
+                        <div className="space-y-2">
                           {customerData.public_messages.map((msg) => {
                             const isAgent = msg.sender_role === 'agent';
                             return (
                               <div
                                 key={msg.id}
-                                className={`p-3.5 rounded-xl border text-sm ${
+                                className={`p-3 rounded-lg border text-xs ${
                                   isAgent
-                                    ? 'bg-blue-50/60 border-blue-200 text-slate-900'
+                                    ? 'bg-slate-50 border-slate-200 text-slate-900'
                                     : 'bg-white border-slate-200 text-slate-800'
                                 }`}
                               >
-                                <div className="flex items-center justify-between text-xs mb-1">
-                                  <span className="font-bold text-slate-900">
+                                <div className="flex items-center justify-between mb-1 text-[11px]">
+                                  <span className="font-semibold text-slate-900">
                                     {msg.sender_name || (isAgent ? 'Support Agent' : 'You')}
                                     {isAgent && (
-                                      <span className="ml-1.5 px-1.5 py-0.2 rounded bg-blue-600 text-white text-[10px] uppercase font-bold">
-                                        Agent
+                                      <span className="ml-1.5 px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 text-[9px] uppercase font-bold">
+                                        Staff
                                       </span>
                                     )}
                                   </span>
-                                  <span className="text-slate-400 text-[11px]">
-                                    {new Date(msg.created_at).toLocaleString()}
+                                  <span className="text-slate-400 text-[10px] tabular-nums">
+                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 </div>
-                                <p className="whitespace-pre-wrap">{msg.body}</p>
+                                <p className="whitespace-pre-wrap leading-relaxed text-slate-700">{msg.body}</p>
                               </div>
                             );
                           })}
@@ -583,27 +607,27 @@ export default function CustomerSupportPortal() {
                       )}
                     </div>
 
-                    {/* Customer Reply Composer */}
-                    <form onSubmit={handleSendCustomerReply} className="mt-4">
+                    {/* Reply Form */}
+                    <form onSubmit={handleSendCustomerReply} className="mt-3">
                       {replySuccess && (
                         <div className="mb-2 p-2 bg-emerald-50 text-emerald-700 text-xs rounded border border-emerald-200">
                           {replySuccess}
                         </div>
                       )}
                       <textarea
-                        rows={3}
+                        rows={2}
                         value={customerReply}
                         onChange={(e) => setCustomerReply(e.target.value)}
-                        placeholder="Add a reply or follow-up note..."
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-sans"
+                        placeholder="Add a reply or extra information..."
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs focus:outline-hidden focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition font-sans"
                       />
-                      <div className="mt-2 flex justify-end">
+                      <div className="mt-1.5 flex justify-end">
                         <button
                           type="submit"
                           disabled={sendingReply || !customerReply.trim()}
-                          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md shadow-2xs transition disabled:opacity-50 cursor-pointer"
+                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-md border border-slate-800 shadow-2xs transition disabled:opacity-50 cursor-pointer"
                         >
-                          {sendingReply ? 'Sending...' : 'Send Reply'}
+                          {sendingReply ? 'Sending...' : 'Send Message'}
                         </button>
                       </div>
                     </form>
@@ -617,4 +641,3 @@ export default function CustomerSupportPortal() {
     </div>
   );
 }
-

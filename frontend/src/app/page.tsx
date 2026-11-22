@@ -79,6 +79,13 @@ interface DetailedTicketData {
   sla?: SLAData;
 }
 
+interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title?: string;
+  text: string;
+}
+
 const DEFAULT_AGENTS: User[] = [
   { id: 1, name: 'Meera Sharma', email: 'meera@frontdesk.test', role: 'agent' },
   { id: 2, name: 'Rahul Verma', email: 'rahul@frontdesk.test', role: 'agent' },
@@ -108,9 +115,8 @@ export default function AgentDashboard() {
   const [composerText, setComposerText] = useState<string>('');
   const [submittingAction, setSubmittingAction] = useState<boolean>(false);
 
-  // Alerts and modals
-  const [conflictAlert, setConflictAlert] = useState<string | null>(null);
-  const [generalAlert, setGeneralAlert] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  // Toasts
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // New ticket modal
   const [showNewModal, setShowNewModal] = useState<boolean>(false);
@@ -119,8 +125,17 @@ export default function AgentDashboard() {
   const [newPriority, setNewPriority] = useState<'URGENT' | 'MEDIUM' | 'LOW'>('URGENT');
   const [newCustomerId, setNewCustomerId] = useState<number>(4);
 
-  // Audit tab/collapse
-  const [showAuditLogs, setShowAuditLogs] = useState<boolean>(false);
+  const addToast = useCallback((type: 'success' | 'error' | 'warning' | 'info', text: string, title?: string) => {
+    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    setToasts((prev) => [...prev, { id, type, text, title }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // Re-fetch ticket queue
   const refreshTickets = useCallback(async (preserveSelectedId = true) => {
@@ -142,19 +157,15 @@ export default function AgentDashboard() {
         }
       }
     } catch {
-      setGeneralAlert({
-        type: 'error',
-        text: `Cannot connect to backend API at ${API_BASE}. Make sure the backend server is running.`,
-      });
+      addToast('error', `Cannot connect to backend API at ${API_BASE}. Ensure server is running.`, 'Connection Failed');
     } finally {
       setLoadingTickets(false);
     }
-  }, []);
+  }, [addToast]);
 
   // Re-fetch single ticket details
   const refreshTicketDetails = useCallback(async (id: number) => {
     setLoadingDetails(true);
-    setConflictAlert(null);
     try {
       const res = await fetch(`${API_BASE}/api/tickets/${id}`);
       if (res.ok) {
@@ -162,22 +173,20 @@ export default function AgentDashboard() {
         setSelectedDetails(data);
       }
     } catch {
-      setGeneralAlert({ type: 'error', text: 'Network error while fetching ticket details' });
+      addToast('error', 'Error fetching ticket details', 'Network Error');
     } finally {
       setLoadingDetails(false);
     }
-  }, []);
+  }, [addToast]);
 
   // Initial data load effect
   useEffect(() => {
     let active = true;
 
     async function initialize() {
-      // Yield to microtask queue to decouple from synchronous effect execution
       await Promise.resolve();
       if (!active) return;
 
-      // Check agent authentication
       const stored = typeof window !== 'undefined' ? localStorage.getItem('frontdesk_agent') : null;
       if (!stored) {
         router.push('/login');
@@ -231,10 +240,7 @@ export default function AgentDashboard() {
         }
       } catch {
         if (active) {
-          setGeneralAlert({
-            type: 'error',
-            text: `Cannot connect to backend API at ${API_BASE}. Make sure the backend server is running.`,
-          });
+          addToast('error', `Cannot connect to API at ${API_BASE}.`, 'Connection Error');
         }
       } finally {
         if (active) setLoadingTickets(false);
@@ -246,7 +252,7 @@ export default function AgentDashboard() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [router, addToast]);
 
   // Load details when selected ticket changes
   useEffect(() => {
@@ -258,7 +264,6 @@ export default function AgentDashboard() {
 
     async function loadDetails() {
       setLoadingDetails(true);
-      setConflictAlert(null);
       try {
         const res = await fetch(`${API_BASE}/api/tickets/${selectedTicketId}`);
         if (res.ok && active) {
@@ -266,9 +271,7 @@ export default function AgentDashboard() {
           setSelectedDetails(data);
         }
       } catch {
-        if (active) {
-          setGeneralAlert({ type: 'error', text: 'Network error while loading ticket details' });
-        }
+        // details fetch failure handled gracefully
       } finally {
         if (active) setLoadingDetails(false);
       }
@@ -281,27 +284,31 @@ export default function AgentDashboard() {
     };
   }, [selectedTicketId]);
 
-  // Filtered queue
+  // Filtered tickets
   const filteredTickets = useMemo(() => {
-    return tickets.filter((ticket) => {
-      if (queueFilter === 'LATE') {
-        return ticket.sla?.isLate === true;
-      }
-      if (queueFilter === 'WAITING') {
-        return ticket.status === 'WAITING_ON_CUSTOMER';
-      }
-      if (queueFilter === 'UNASSIGNED') {
-        return ticket.assigned_agent_id === null || ticket.assigned_agent_id === undefined;
-      }
+    return tickets.filter((t) => {
+      if (queueFilter === 'LATE') return t.sla?.isLate === true;
+      if (queueFilter === 'WAITING') return t.status === 'WAITING_ON_CUSTOMER';
+      if (queueFilter === 'UNASSIGNED') return t.assigned_agent_id === null;
       return true;
     });
   }, [tickets, queueFilter]);
 
-  // Claim Ticket Handler (Atomic test with 409 Conflict check)
+  // Tab counts
+  const tabCounts = useMemo(() => {
+    return {
+      all: tickets.length,
+      late: tickets.filter((t) => t.sla?.isLate === true).length,
+      waiting: tickets.filter((t) => t.status === 'WAITING_ON_CUSTOMER').length,
+      unassigned: tickets.filter((t) => t.assigned_agent_id === null).length,
+    };
+  }, [tickets]);
+
+  // Atomic Claim Handler
   const handleClaimTicket = async () => {
-    if (!selectedTicketId || !currentAgent) return;
-    setConflictAlert(null);
+    if (!selectedTicketId) return;
     setSubmittingAction(true);
+
     try {
       const res = await fetch(`${API_BASE}/api/tickets/${selectedTicketId}/claim`, {
         method: 'POST',
@@ -310,10 +317,10 @@ export default function AgentDashboard() {
       });
 
       if (res.status === 409) {
-        const errorData = await res.json();
-        setConflictAlert(errorData.error || 'Ticket already claimed by another agent');
-        refreshTicketDetails(selectedTicketId);
-        refreshTickets();
+        const err = await res.json();
+        addToast('warning', err.error || 'This ticket was already claimed by another agent.', 'Claim Conflict (409)');
+        await refreshTicketDetails(selectedTicketId);
+        await refreshTickets();
         return;
       }
 
@@ -322,36 +329,36 @@ export default function AgentDashboard() {
         throw new Error(err.error || 'Failed to claim ticket');
       }
 
-      setGeneralAlert({ type: 'success', text: `Ticket #${selectedTicketId} successfully claimed by ${currentAgent.name}!` });
+      addToast('success', `Ticket #${selectedTicketId} assigned to ${currentAgent.name}.`, 'Ticket Claimed');
       await refreshTicketDetails(selectedTicketId);
       await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error claiming ticket';
-      setGeneralAlert({ type: 'error', text: msg });
+      addToast('error', msg);
     } finally {
       setSubmittingAction(false);
     }
   };
 
   // Change Priority Handler
-  const handleChangePriority = async (newPriority: 'URGENT' | 'MEDIUM' | 'LOW') => {
+  const handleChangePriority = async (newP: 'URGENT' | 'MEDIUM' | 'LOW') => {
     if (!selectedTicketId) return;
     setSubmittingAction(true);
     try {
       const res = await fetch(`${API_BASE}/api/tickets/${selectedTicketId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priority: newPriority, actor_id: currentAgent.id }),
+        body: JSON.stringify({ priority: newP, actor_id: currentAgent.id }),
       });
 
       if (!res.ok) throw new Error('Failed to update priority');
 
-      setGeneralAlert({ type: 'success', text: `Priority changed to ${newPriority}` });
+      addToast('info', `Priority changed to ${newP}. SLA deadlines recalculated.`, 'Priority Updated');
       await refreshTicketDetails(selectedTicketId);
       await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error updating priority';
-      setGeneralAlert({ type: 'error', text: msg });
+      addToast('error', msg);
     } finally {
       setSubmittingAction(false);
     }
@@ -370,12 +377,12 @@ export default function AgentDashboard() {
 
       if (!res.ok) throw new Error('Failed to resolve ticket');
 
-      setGeneralAlert({ type: 'success', text: `Ticket #${selectedTicketId} resolved` });
+      addToast('success', `Ticket #${selectedTicketId} marked as Resolved.`, 'Ticket Resolved');
       await refreshTicketDetails(selectedTicketId);
       await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error resolving ticket';
-      setGeneralAlert({ type: 'error', text: msg });
+      addToast('error', msg);
     } finally {
       setSubmittingAction(false);
     }
@@ -396,20 +403,17 @@ export default function AgentDashboard() {
       const data = await res.json();
 
       if (data.isNewTicket) {
-        setGeneralAlert({
-          type: 'info',
-          text: `Original ticket was resolved > 7 days ago. Automatically created new linked ticket #${data.ticket.id}.`,
-        });
+        addToast('info', `Original resolved > 7 days ago. Created new follow-up #${data.ticket.id}.`, 'Linked Follow-Up Created');
         await refreshTickets();
         setSelectedTicketId(data.ticket.id);
       } else {
-        setGeneralAlert({ type: 'success', text: `Ticket #${selectedTicketId} reopened successfully.` });
+        addToast('success', `Ticket #${selectedTicketId} reopened.`, 'Ticket Reopened');
         await refreshTicketDetails(selectedTicketId);
         await refreshTickets();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error reopening ticket';
-      setGeneralAlert({ type: 'error', text: msg });
+      addToast('error', msg);
     } finally {
       setSubmittingAction(false);
     }
@@ -436,7 +440,7 @@ export default function AgentDashboard() {
       if (!res.ok) throw new Error('Failed to create ticket');
       const created = await res.json();
 
-      setGeneralAlert({ type: 'success', text: `Ticket #${created.id} created successfully!` });
+      addToast('success', `Ticket #${created.id} created successfully.`, 'Ticket Created');
       setShowNewModal(false);
       setNewSubject('');
       setNewDescription('');
@@ -444,7 +448,7 @@ export default function AgentDashboard() {
       setSelectedTicketId(created.id);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error creating ticket';
-      setGeneralAlert({ type: 'error', text: msg });
+      addToast('error', msg);
     } finally {
       setSubmittingAction(false);
     }
@@ -465,7 +469,7 @@ export default function AgentDashboard() {
         });
 
         if (!res.ok) throw new Error('Failed to send public reply');
-        setGeneralAlert({ type: 'success', text: 'Public reply sent to customer (Status set to WAITING_ON_CUSTOMER, SLA paused)' });
+        addToast('success', 'Public reply sent. Ticket set to WAITING_ON_CUSTOMER and SLA paused.', 'Reply Sent');
       } else {
         const res = await fetch(`${API_BASE}/api/tickets/${selectedTicketId}/notes`, {
           method: 'POST',
@@ -474,7 +478,7 @@ export default function AgentDashboard() {
         });
 
         if (!res.ok) throw new Error('Failed to save internal note');
-        setGeneralAlert({ type: 'success', text: 'Private team note recorded (Zero-leak verified)' });
+        addToast('success', 'Private team note recorded (Zero-leak verified).', 'Internal Note Saved');
       }
 
       setComposerText('');
@@ -482,13 +486,13 @@ export default function AgentDashboard() {
       await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error submitting message';
-      setGeneralAlert({ type: 'error', text: msg });
+      addToast('error', msg);
     } finally {
       setSubmittingAction(false);
     }
   };
 
-  // Combined conversation timeline (sorted chronologically)
+  // Combined conversation timeline
   const conversationFeed = useMemo(() => {
     if (!selectedDetails) return [];
     const publicMsgs = (selectedDetails.public_messages || []).map((m) => ({
@@ -505,37 +509,73 @@ export default function AgentDashboard() {
     return [...publicMsgs, ...internalNotes].sort((a, b) => a.timestamp - b.timestamp);
   }, [selectedDetails]);
 
-  // Helpers for Badges
-  const getPriorityBadge = (priority: string) => {
+  // Semantic Muted Badges
+  const renderPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'URGENT':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-red-100 text-red-800 border border-red-200">URGENT</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 tabular-nums">
+            URGENT
+          </span>
+        );
       case 'MEDIUM':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-800 border border-amber-200">MEDIUM</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] tabular-nums">
+            MEDIUM
+          </span>
+        );
       case 'LOW':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-700 border border-slate-200">LOW</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 tabular-nums">
+            LOW
+          </span>
+        );
       default:
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-gray-100 text-gray-700">{priority}</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+            {priority}
+          </span>
+        );
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'OPEN':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-emerald-100 text-emerald-800 border border-emerald-200">OPEN</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200 tabular-nums">
+            OPEN
+          </span>
+        );
       case 'WAITING_ON_CUSTOMER':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800 border border-purple-200">WAITING ON CUSTOMER</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] tabular-nums">
+            WAITING ON CUSTOMER
+          </span>
+        );
       case 'RESOLVED':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 text-blue-800 border border-blue-200">RESOLVED</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] tabular-nums">
+            RESOLVED
+          </span>
+        );
       case 'CLOSED':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-gray-200 text-gray-800 border border-gray-300">CLOSED</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+            CLOSED
+          </span>
+        );
       default:
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-gray-100 text-gray-700">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+            {status}
+          </span>
+        );
     }
   };
 
   const formatDateTime = (dateStr?: string | null) => {
-    if (!dateStr) return 'N/A';
+    if (!dateStr) return '—';
     try {
       const d = new Date(dateStr);
       return d.toLocaleString(undefined, {
@@ -551,32 +591,33 @@ export default function AgentDashboard() {
 
   if (!isAuthChecked) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg animate-pulse shadow-sm">
-          F
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-white font-bold text-xs flex items-center justify-center animate-pulse">
+          FD
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-100 text-slate-900 font-sans">
-      {/* 1. TOP BAR */}
-      <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-xs shrink-0 z-20">
+    <div className="flex flex-col h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden">
+      {/* 1. TOP NAVBAR */}
+      <header className="h-13 bg-white border-b border-slate-200 px-5 flex items-center justify-between shrink-0 z-20 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-            F
+          <div className="w-7 h-7 rounded-md bg-slate-900 border border-slate-800 flex items-center justify-center text-white font-bold text-xs shadow-2xs">
+            FD
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Frontdesk</h1>
-            <p className="text-xs text-slate-500 hidden sm:block">Support Operations & SLA Control Center</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-bold tracking-[-0.02em] text-slate-900">Frontdesk</h1>
+            <span className="text-slate-300 text-xs">/</span>
+            <span className="text-xs text-slate-500 font-medium hidden sm:inline">Operations</span>
           </div>
         </div>
 
-        {/* Acting As Agent Selector */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-1.5 shadow-2xs">
-            <span className="text-xs font-medium text-slate-600 pl-2">Acting as Agent:</span>
+        {/* Right Header Actions */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md px-2 py-1 shadow-2xs">
+            <span className="text-[11px] font-medium text-slate-500 pl-1">Agent:</span>
             <select
               value={currentAgent.id}
               onChange={(e) => {
@@ -584,26 +625,25 @@ export default function AgentDashboard() {
                 if (ag) {
                   setCurrentAgent(ag);
                   localStorage.setItem('frontdesk_agent', JSON.stringify(ag));
-                  setConflictAlert(null);
                 }
               }}
-              className="bg-white border border-slate-300 text-slate-900 text-sm font-semibold rounded-md px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:outline-hidden cursor-pointer"
+              className="bg-transparent text-slate-900 text-xs font-semibold focus:outline-hidden cursor-pointer"
             >
               {agents.map((ag) => (
                 <option key={ag.id} value={ag.id}>
-                  {ag.name} (Agent #{ag.id})
+                  {ag.name}
                 </option>
               ))}
             </select>
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2" title="Online" />
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1" title="Online" />
           </div>
 
           <button
             onClick={() => refreshTickets()}
             title="Refresh Queue"
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md border border-slate-200 transition cursor-pointer"
           >
-            <svg className={`w-5 h-5 ${loadingTickets ? 'animate-spin text-blue-600' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-3.5 h-3.5 ${loadingTickets ? 'animate-spin text-slate-900' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
@@ -613,85 +653,82 @@ export default function AgentDashboard() {
               localStorage.removeItem('frontdesk_agent');
               router.push('/login');
             }}
-            title="Log out of Frontdesk"
-            className="text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-slate-100 px-2.5 py-1.5 rounded-md border border-slate-200 transition cursor-pointer"
+            title="Log out"
+            className="text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 px-2.5 py-1.5 rounded-md border border-slate-200 transition cursor-pointer"
           >
             Log out
           </button>
         </div>
       </header>
 
-      {/* Global Alerts Banner */}
-      {generalAlert && (
-        <div
-          className={`px-6 py-2.5 text-sm flex items-center justify-between transition-all ${
-            generalAlert.type === 'error'
-              ? 'bg-red-500 text-white'
-              : generalAlert.type === 'success'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-blue-600 text-white'
-          }`}
-        >
-          <span>{generalAlert.text}</span>
-          <button
-            onClick={() => setGeneralAlert(null)}
-            className="text-white hover:text-slate-200 font-bold ml-4 cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* MAIN TWO-PANEL LAYOUT */}
+      {/* 2. THREE-PANE OPS LAYOUT */}
       <div className="flex flex-1 overflow-hidden">
-        {/* 2. LEFT PANEL: TICKET QUEUE */}
-        <section className="w-full md:w-96 lg:w-[420px] bg-white border-r border-slate-200 flex flex-col shrink-0">
-          {/* Queue Filter Tabs & New Ticket Button */}
-          <div className="p-3 border-b border-slate-200 bg-slate-50/70">
+        {/* PANE 1: LEFT QUEUE */}
+        <section className="w-80 lg:w-[350px] bg-white border-r border-slate-200 flex flex-col shrink-0">
+          {/* Queue Filter Bar */}
+          <div className="p-3 border-b border-slate-200 bg-slate-50/60">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Queue ({filteredTickets.length})</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                Ticket Queue
+              </span>
               <button
                 onClick={() => setShowNewModal(true)}
-                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-2xs transition flex items-center gap-1 cursor-pointer"
+                className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-medium rounded-md shadow-2xs transition flex items-center gap-1 cursor-pointer"
               >
                 <span>+</span> New Ticket
               </button>
             </div>
 
-            <div className="grid grid-cols-4 gap-1 bg-slate-200/80 p-1 rounded-lg text-xs font-semibold">
+            {/* Segmented Filter Control */}
+            <div className="grid grid-cols-4 gap-1 bg-slate-200/60 p-0.5 rounded-lg text-xs font-medium">
               <button
                 onClick={() => setQueueFilter('ALL')}
-                className={`py-1.5 px-2 rounded-md transition text-center cursor-pointer ${
-                  queueFilter === 'ALL' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`py-1 px-1.5 rounded-md transition text-center cursor-pointer flex items-center justify-center gap-1 ${
+                  queueFilter === 'ALL'
+                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                All
+                <span>All</span>
+                <span className="text-[10px] text-slate-400 tabular-nums">({tabCounts.all})</span>
               </button>
+
               <button
                 onClick={() => setQueueFilter('LATE')}
-                className={`py-1.5 px-2 rounded-md transition text-center flex items-center justify-center gap-1 cursor-pointer ${
-                  queueFilter === 'LATE' ? 'bg-white text-red-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`py-1 px-1.5 rounded-md transition text-center flex items-center justify-center gap-1 cursor-pointer ${
+                  queueFilter === 'LATE'
+                    ? 'bg-white text-rose-700 shadow-2xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <span>Late</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                <span className={`text-[10px] tabular-nums ${tabCounts.late > 0 ? 'text-rose-600 font-bold' : 'text-slate-400'}`}>
+                  ({tabCounts.late})
+                </span>
               </button>
+
               <button
                 onClick={() => setQueueFilter('WAITING')}
-                className={`py-1.5 px-2 rounded-md transition text-center truncate cursor-pointer ${
-                  queueFilter === 'WAITING' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`py-1 px-1.5 rounded-md transition text-center cursor-pointer flex items-center justify-center gap-1 ${
+                  queueFilter === 'WAITING'
+                    ? 'bg-white text-amber-800 shadow-2xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title="Waiting on Customer"
               >
-                Waiting
+                <span>Wait</span>
+                <span className="text-[10px] text-slate-400 tabular-nums">({tabCounts.waiting})</span>
               </button>
+
               <button
                 onClick={() => setQueueFilter('UNASSIGNED')}
-                className={`py-1.5 px-2 rounded-md transition text-center truncate cursor-pointer ${
-                  queueFilter === 'UNASSIGNED' ? 'bg-white text-amber-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`py-1 px-1.5 rounded-md transition text-center cursor-pointer flex items-center justify-center gap-1 ${
+                  queueFilter === 'UNASSIGNED'
+                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Unassigned
+                <span>Open</span>
+                <span className="text-[10px] text-slate-400 tabular-nums">({tabCounts.unassigned})</span>
               </button>
             </div>
           </div>
@@ -699,10 +736,27 @@ export default function AgentDashboard() {
           {/* Ticket Card List */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {loadingTickets && tickets.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-sm">Loading tickets...</div>
+              /* Skeleton Loader */
+              <div className="p-4 space-y-4">
+                {[1, 2, 3, 4, 5].map((idx) => (
+                  <div key={idx} className="animate-pulse space-y-2">
+                    <div className="flex justify-between">
+                      <div className="h-3 w-16 bg-slate-200 rounded" />
+                      <div className="h-3 w-12 bg-slate-200 rounded" />
+                    </div>
+                    <div className="h-4 w-3/4 bg-slate-200 rounded" />
+                    <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                  </div>
+                ))}
+              </div>
             ) : filteredTickets.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-sm">
-                No tickets match the selected filter.
+              /* Minimal Empty State */
+              <div className="p-8 text-center text-slate-400 flex flex-col items-center">
+                <svg className="w-8 h-8 text-slate-300 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-xs font-medium text-slate-600">No tickets in this view</span>
+                <span className="text-[11px] text-slate-400 mt-0.5">Try choosing another filter tab</span>
               </div>
             ) : (
               filteredTickets.map((ticket) => {
@@ -713,48 +767,41 @@ export default function AgentDashboard() {
                   <div
                     key={ticket.id}
                     onClick={() => setSelectedTicketId(ticket.id)}
-                    className={`p-4 cursor-pointer transition-colors relative hover:bg-slate-50 ${
+                    className={`p-3.5 cursor-pointer transition-colors relative ${
                       isSelected
-                        ? 'bg-blue-50/70 border-l-4 border-l-blue-600'
-                        : 'border-l-4 border-l-transparent'
+                        ? 'bg-slate-100/90 border-l-[3px] border-slate-900 shadow-2xs'
+                        : 'border-l-[3px] border-transparent hover:bg-slate-50/80'
                     }`}
                   >
                     {/* Top Row: ID, Badges, LATE flag */}
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono font-bold text-slate-500">#{ticket.id}</span>
-                        {getPriorityBadge(ticket.priority)}
-                        {getStatusBadge(ticket.status)}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-mono text-[11px] font-semibold text-slate-500 tabular-nums">
+                          #{ticket.id}
+                        </span>
+                        {renderPriorityBadge(ticket.priority)}
+                        {renderStatusBadge(ticket.status)}
                       </div>
 
-                      {/* CLEAR RED LATE BADGE */}
+                      {/* Crisp Muted LATE Badge */}
                       {isLate && (
-                        <span className="inline-flex items-center gap-1 bg-red-600 text-white font-extrabold text-[10px] tracking-wider uppercase px-2 py-0.5 rounded shadow-xs animate-pulse">
-                          <span>●</span> LATE
+                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 tabular-nums shrink-0">
+                          LATE
                         </span>
                       )}
                     </div>
 
                     {/* Subject */}
-                    <h3 className="font-semibold text-slate-900 text-sm line-clamp-1 mb-1">
+                    <h3 className="font-medium text-slate-900 text-xs line-clamp-1 mb-1 leading-snug">
                       {ticket.subject}
                     </h3>
 
-                    {/* Assigned Agent & Customer */}
-                    <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
-                      <div className="flex items-center gap-1 truncate">
-                        <span>👤</span>
-                        {ticket.assigned_agent_id ? (
-                          <span className="text-slate-700 font-medium truncate">
-                            {ticket.assigned_agent_name || `Agent #${ticket.assigned_agent_id}`}
-                          </span>
-                        ) : (
-                          <span className="text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                            Unassigned
-                          </span>
-                        )}
-                      </div>
-                      <span className="shrink-0 text-slate-400 text-[11px]">
+                    {/* Customer & Timestamp */}
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1.5">
+                      <span className="truncate max-w-[170px] text-slate-600">
+                        {ticket.customer_name || 'Customer'}
+                      </span>
+                      <span className="shrink-0 text-slate-400 tabular-nums">
                         {formatDateTime(ticket.created_at)}
                       </span>
                     </div>
@@ -765,199 +812,63 @@ export default function AgentDashboard() {
           </div>
         </section>
 
-        {/* 3. RIGHT PANEL: SELECTED TICKET DETAIL */}
-        <main className="flex-1 bg-slate-50 flex flex-col overflow-y-auto">
+        {/* PANE 2: CENTER THREAD & COMPOSER */}
+        <main className="flex-1 min-w-0 bg-[#F8FAFC] flex flex-col overflow-y-auto border-r border-slate-200">
           {loadingDetails && !selectedDetails ? (
-            <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-              Loading ticket details...
+            <div className="flex-1 flex items-center justify-center text-slate-400 text-xs">
+              <svg className="animate-spin h-5 w-5 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              Loading conversation...
             </div>
           ) : !selectedDetails ? (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 text-2xl mb-3">
-                📋
+              <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mb-2.5">
+                <svg className="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
               </div>
-              <h3 className="text-base font-semibold text-slate-700">No ticket selected</h3>
-              <p className="text-sm max-w-sm mt-1 text-slate-500">
-                Choose a ticket from the left panel to inspect details, send replies, post internal notes, and view immutable audit history.
+              <h3 className="text-xs font-semibold text-slate-700">No ticket selected</h3>
+              <p className="text-xs max-w-xs mt-0.5 text-slate-400">
+                Choose an item from the queue to view messages, post notes, and check SLA timers.
               </p>
             </div>
           ) : (
             <div className="flex flex-col flex-1">
-              {/* Conflict Alert Banner (409 Conflict) */}
-              {conflictAlert && (
-                <div className="m-4 mb-0 bg-red-100 border-l-4 border-red-600 p-4 rounded-r-lg shadow-sm flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl">⚠️</span>
-                    <div>
-                      <h4 className="font-bold text-red-900 text-sm">Claim Conflict Detected (409)</h4>
-                      <p className="text-sm text-red-800 mt-0.5">{conflictAlert}</p>
-                      <p className="text-xs text-red-700 mt-1">
-                        Another agent has already claimed this ticket. Please refresh or select an unassigned ticket.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setConflictAlert(null)}
-                    className="text-red-700 hover:text-red-900 font-bold text-sm cursor-pointer"
-                  >
-                    ✕
-                  </button>
+              {/* Ticket Top Header Bar */}
+              <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-2xs">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-mono text-xs font-semibold text-slate-500 tabular-nums">
+                    Ticket #{selectedDetails.ticket.id}
+                  </span>
+                  {renderStatusBadge(selectedDetails.ticket.status)}
+                  {renderPriorityBadge(selectedDetails.ticket.priority)}
+                  {selectedDetails.sla?.isLate && (
+                    <span className="bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-[10px] px-1.5 py-0.5 rounded tabular-nums">
+                      SLA BREACHED
+                    </span>
+                  )}
                 </div>
-              )}
-
-              {/* TICKET DETAIL HEADER */}
-              <div className="bg-white border-b border-slate-200 p-6 shadow-2xs">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  {/* Title & Metadata */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-mono text-xs font-bold text-slate-500">
-                        Ticket #{selectedDetails.ticket.id}
-                      </span>
-                      {getStatusBadge(selectedDetails.ticket.status)}
-                      {selectedDetails.sla?.isLate && (
-                        <span className="bg-red-600 text-white font-bold text-xs px-2 py-0.5 rounded shadow-2xs">
-                          SLA BREACHED
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                      {selectedDetails.ticket.subject}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Reported by{' '}
-                      <span className="font-medium text-slate-700">
-                        {selectedDetails.ticket.customer_name || 'Customer'}
-                      </span>{' '}
-                      ({selectedDetails.ticket.customer_email || 'No email'}) • Created{' '}
-                      {formatDateTime(selectedDetails.ticket.created_at)}
-                    </p>
-                  </div>
-
-                  {/* Header Actions: Priority Dropdown, Claim Button, Resolve Button */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    {/* Priority Selector */}
-                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
-                      <span className="text-xs text-slate-500 font-medium">Priority:</span>
-                      <select
-                        value={selectedDetails.ticket.priority}
-                        disabled={submittingAction}
-                        onChange={(e) =>
-                          handleChangePriority(e.target.value as 'URGENT' | 'MEDIUM' | 'LOW')
-                        }
-                        className="bg-transparent text-xs font-bold text-slate-800 focus:outline-hidden cursor-pointer"
-                      >
-                        <option value="URGENT">URGENT (2h / 9h)</option>
-                        <option value="MEDIUM">MEDIUM (4.5h / 27h)</option>
-                        <option value="LOW">LOW (9h / 45h)</option>
-                      </select>
-                    </div>
-
-                    {/* Atomic "Take Ticket" Button */}
-                    <button
-                      onClick={handleClaimTicket}
-                      disabled={
-                        submittingAction ||
-                        selectedDetails.ticket.assigned_agent_id === currentAgent.id
-                      }
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
-                        selectedDetails.ticket.assigned_agent_id === currentAgent.id
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
-                          : selectedDetails.ticket.assigned_agent_id
-                          ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
-                      }`}
-                    >
-                      {selectedDetails.ticket.assigned_agent_id === currentAgent.id ? (
-                        <>✓ Claimed by you</>
-                      ) : selectedDetails.ticket.assigned_agent_id ? (
-                        <>Take Over Ticket</>
-                      ) : (
-                        <>✋ Take Ticket</>
-                      )}
-                    </button>
-
-                    {/* "Resolve Ticket" Button */}
-                    {selectedDetails.ticket.status !== 'RESOLVED' && selectedDetails.ticket.status !== 'CLOSED' ? (
-                      <button
-                        onClick={handleResolveTicket}
-                        disabled={submittingAction}
-                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs cursor-pointer"
-                      >
-                        ✓ Resolve Ticket
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleReopenTicket}
-                        disabled={submittingAction}
-                        className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs cursor-pointer"
-                      >
-                        ↻ Reopen Ticket
-                      </button>
-                    )}
-                  </div>
+                <h2 className="text-base font-semibold text-slate-900 tracking-[-0.02em]">
+                  {selectedDetails.ticket.subject}
+                </h2>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  Opened by <span className="font-medium text-slate-700">{selectedDetails.ticket.customer_name || 'Customer'}</span> ({selectedDetails.ticket.customer_email}) &bull; <span className="tabular-nums">{formatDateTime(selectedDetails.ticket.created_at)}</span>
                 </div>
-
-                {/* SLA Control Information Banner */}
-                {selectedDetails.sla && (
-                  <div className="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div>
-                      <span className="text-slate-500 block">Working Time Elapsed</span>
-                      <span className="font-semibold text-slate-800">
-                        {selectedDetails.sla.workingMinutesElapsed ?? 0} mins ({((selectedDetails.sla.workingMinutesElapsed ?? 0) / 60).toFixed(1)}h)
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">First Reply SLA</span>
-                      <span
-                        className={`font-semibold ${
-                          selectedDetails.sla.isFirstReplyBreached
-                            ? 'text-red-600 font-bold'
-                            : 'text-slate-800'
-                        }`}
-                      >
-                        Due: {formatDateTime(selectedDetails.sla.firstReplyDueAt)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">Resolution SLA</span>
-                      <span
-                        className={`font-semibold ${
-                          selectedDetails.sla.isResolutionBreached
-                            ? 'text-red-600 font-bold'
-                            : 'text-slate-800'
-                        }`}
-                      >
-                        Due: {formatDateTime(selectedDetails.sla.resolutionDueAt)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">Clock Status</span>
-                      {selectedDetails.ticket.status === 'WAITING_ON_CUSTOMER' ? (
-                        <span className="inline-flex items-center gap-1 font-semibold text-purple-700">
-                          ⏸ Paused (Waiting)
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
-                          ▶ Active
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* CONVERSATION THREAD */}
-              <div className="flex-1 p-6 space-y-4">
+              {/* Conversation Thread Feed */}
+              <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                 {/* Original Description Card */}
                 <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs">
                   <div className="flex items-center justify-between text-xs text-slate-500 mb-2 pb-2 border-b border-slate-100">
-                    <span className="font-bold text-slate-800">
-                      Original Ticket Description • {selectedDetails.ticket.customer_name}
+                    <span className="font-medium text-slate-800">
+                      Initial Request &bull; {selectedDetails.ticket.customer_name}
                     </span>
-                    <span>{formatDateTime(selectedDetails.ticket.created_at)}</span>
+                    <span className="tabular-nums text-[11px]">{formatDateTime(selectedDetails.ticket.created_at)}</span>
                   </div>
-                  <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
                     {selectedDetails.ticket.description}
                   </p>
                 </div>
@@ -965,21 +876,24 @@ export default function AgentDashboard() {
                 {/* Timeline Messages & Internal Notes */}
                 {conversationFeed.map((item) => {
                   if (item.type === 'note') {
-                    // ZERO-LEAK INTERNAL NOTE (DISTINCT AMBER BACKGROUND)
+                    // ZERO-LEAK INTERNAL NOTE (WARM CREAM SURFACE WITH 3PX LEFT ACCENT)
                     return (
                       <div
                         key={`note-${item.id}`}
-                        className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 shadow-xs text-amber-950 transition"
+                        className="bg-[#FEFCE8] border-l-[3px] border-[#EAB308] border-y border-r border-amber-200/60 rounded-lg p-4 text-amber-950 shadow-2xs transition"
                       >
-                        <div className="flex items-center justify-between mb-2 pb-2 border-b border-amber-200">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-200 text-amber-900 border border-amber-300">
-                            🔒 PRIVATE TEAM NOTE — NOT VISIBLE TO CUSTOMER
+                        <div className="flex items-center justify-between mb-2 pb-2 border-b border-amber-200/60">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200">
+                            <svg className="w-3 h-3 text-amber-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <span>Internal Note &mdash; Team Only</span>
                           </span>
-                          <span className="text-xs text-amber-800 font-medium">
-                            {item.agent_name || 'Agent'} • {formatDateTime(item.created_at)}
+                          <span className="text-[11px] text-amber-900/80 font-medium tabular-nums">
+                            {item.agent_name || 'Agent'} &bull; {formatDateTime(item.created_at)}
                           </span>
                         </div>
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{item.body}</p>
+                        <p className="text-xs text-amber-950 whitespace-pre-wrap leading-relaxed">{item.body}</p>
                       </div>
                     );
                   }
@@ -992,28 +906,28 @@ export default function AgentDashboard() {
                       className={`flex flex-col ${isAgent ? 'items-end' : 'items-start'}`}
                     >
                       <div
-                        className={`max-w-2xl rounded-lg p-4 shadow-2xs border ${
+                        className={`max-w-2xl rounded-lg p-4 shadow-2xs border text-xs leading-relaxed ${
                           isAgent
-                            ? 'bg-blue-50/80 border-blue-200 text-slate-900'
-                            : 'bg-white border-slate-200 text-slate-900'
+                            ? 'bg-[#F8FAFC] border-slate-200/90 text-slate-900'
+                            : 'bg-white border-slate-200 text-slate-800'
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-4 text-xs text-slate-500 mb-1.5 pb-1 border-b border-slate-100">
-                          <span className="font-bold">
+                        <div className="flex items-center justify-between gap-4 text-[11px] text-slate-500 mb-1.5 pb-1 border-b border-slate-100">
+                          <span className="font-semibold text-slate-900">
                             {item.sender_name || 'User'}
                             {isAgent ? (
-                              <span className="ml-1.5 text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded font-semibold">
-                                Staff Agent
+                              <span className="ml-1.5 text-[9px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-bold uppercase">
+                                Staff
                               </span>
                             ) : (
-                              <span className="ml-1.5 text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-semibold">
+                              <span className="ml-1.5 text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold uppercase">
                                 Customer
                               </span>
                             )}
                           </span>
-                          <span>{formatDateTime(item.created_at)}</span>
+                          <span className="tabular-nums text-slate-400">{formatDateTime(item.created_at)}</span>
                         </div>
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{item.body}</p>
+                        <p className="whitespace-pre-wrap">{item.body}</p>
                       </div>
                     </div>
                   );
@@ -1021,132 +935,92 @@ export default function AgentDashboard() {
 
                 {conversationFeed.length === 0 && (
                   <div className="text-center py-6 text-xs text-slate-400">
-                    No replies or internal notes on this ticket yet.
+                    No replies or notes recorded yet.
                   </div>
                 )}
               </div>
 
-              {/* READ-ONLY COLLAPSIBLE AUDIT LOG TRAIL */}
-              <div className="mx-6 mb-4 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setShowAuditLogs(!showAuditLogs)}
-                  className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100/80 text-left flex items-center justify-between text-xs font-bold text-slate-700 transition cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>🛡️</span>
-                    <span>Immutable Audit Log Trail</span>
-                    <span className="bg-slate-200 text-slate-700 text-[10px] px-2 py-0.5 rounded-full font-mono">
-                      {selectedDetails.audit_logs?.length || 0} events
-                    </span>
-                  </div>
-                  <span className="text-slate-400 font-mono text-sm">
-                    {showAuditLogs ? '▲ Collapse' : '▼ Expand'}
-                  </span>
-                </button>
-
-                {showAuditLogs && (
-                  <div className="p-4 border-t border-slate-200 max-h-60 overflow-y-auto divide-y divide-slate-100 text-xs">
-                    {selectedDetails.audit_logs?.length === 0 ? (
-                      <div className="text-slate-400 text-center py-3">No audit logs recorded.</div>
-                    ) : (
-                      selectedDetails.audit_logs?.map((log) => (
-                        <div key={log.id} className="py-2.5 flex items-start justify-between gap-4">
-                          <div>
-                            <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded text-[11px] border border-blue-200">
-                              {log.action}
-                            </span>
-                            <span className="ml-2 text-slate-700">
-                              by{' '}
-                              <strong className="text-slate-900">
-                                {log.actor_name ? `${log.actor_name} (${log.actor_role})` : 'System (Automated)'}
-                              </strong>
-                            </span>
-                            {log.metadata && Object.keys(log.metadata).length > 0 && (
-                              <p className="mt-1 font-mono text-[11px] text-slate-500 bg-slate-50 p-1.5 rounded border border-slate-100">
-                                {JSON.stringify(log.metadata)}
-                              </p>
-                            )}
-                          </div>
-                          <span className="shrink-0 text-slate-400 text-[11px]">
-                            {formatDateTime(log.created_at)}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* REPLY COMPOSER (TWO TABS) */}
-              <div className="bg-white border-t border-slate-200 p-6 sticky bottom-0 z-10 shadow-lg">
+              {/* REPLY & NOTE COMPOSER (STICKY AT BOTTOM) */}
+              <div className="bg-white border-t border-slate-200 p-4 sticky bottom-0 z-10 shadow-[0_-2px_6px_rgba(15,23,42,0.03)]">
                 <form onSubmit={handleSubmitMessage}>
-                  {/* Composer Mode Tabs */}
-                  <div className="flex items-center gap-2 mb-3">
+                  {/* Clean Segmented Tab Toggle */}
+                  <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200 mb-2.5 text-xs">
                     <button
                       type="button"
                       onClick={() => setComposerMode('reply')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1.5 ${
                         composerMode === 'reply'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      <span>💬</span> Reply to Customer
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>Public Reply</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setComposerMode('note')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1.5 ${
                         composerMode === 'note'
-                          ? 'bg-amber-500 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          ? 'bg-[#FEFCE8] text-[#854D0E] shadow-2xs border border-[#FDE68A] font-semibold'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      <span>🔒</span> Internal Team Note
+                      <svg className="w-3.5 h-3.5 text-amber-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <span>Internal Note</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-800 font-bold uppercase tracking-wider">
+                        Team Only
+                      </span>
                     </button>
                   </div>
 
-                  {/* Textarea */}
-                  <div className="relative">
+                  {/* Textarea with Distinct Note Tint */}
+                  <div>
                     <textarea
                       rows={3}
                       value={composerText}
                       onChange={(e) => setComposerText(e.target.value)}
                       placeholder={
                         composerMode === 'reply'
-                          ? `Draft a public reply to ${selectedDetails.ticket.customer_name || 'the customer'} (will set ticket to WAITING_ON_CUSTOMER and pause the SLA clock)...`
-                          : 'Write an internal team note (strictly private to staff agents, never sent or visible to customer)...'
+                          ? `Send a public response to ${selectedDetails.ticket.customer_name || 'the customer'} (moves to WAITING_ON_CUSTOMER, pauses SLA)...`
+                          : 'Write an internal team note (strictly private to support agents, never shown to customer)...'
                       }
-                      className={`w-full rounded-lg p-3 text-sm border focus:outline-hidden transition-all resize-none ${
+                      className={`w-full rounded-lg p-2.5 text-xs border focus:outline-hidden transition-all resize-none font-sans ${
                         composerMode === 'reply'
-                          ? 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-                          : 'border-amber-300 bg-amber-50/30 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                          ? 'border-slate-200 bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 placeholder-slate-400'
+                          : 'border-[#EAB308]/60 bg-[#FEFCE8] focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] text-amber-950 placeholder-amber-800/50'
                       }`}
                     />
                   </div>
 
                   {/* Submit Button Bar */}
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="text-xs text-slate-400">
-                      Posting as <span className="font-semibold text-slate-700">{currentAgent.name}</span>
-                    </div>
+                  <div className="flex items-center justify-between mt-2.5">
+                    <span className="text-[11px] text-slate-400">
+                      Author: <span className="font-medium text-slate-700">{currentAgent.name}</span>
+                    </span>
 
                     {composerMode === 'reply' ? (
                       <button
                         type="submit"
                         disabled={submittingAction || !composerText.trim()}
-                        className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-2 cursor-pointer"
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-md text-xs font-medium border border-slate-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
                       >
-                        {submittingAction ? 'Sending...' : 'Send Reply to Customer'}
+                        {submittingAction ? 'Sending...' : 'Send Public Reply'}
                       </button>
                     ) : (
                       <button
                         type="submit"
                         disabled={submittingAction || !composerText.trim()}
-                        className="px-5 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-2 cursor-pointer"
+                        className="px-3.5 py-1.5 bg-[#B45309] hover:bg-[#92400E] disabled:opacity-40 text-white rounded-md text-xs font-medium border border-[#B45309] shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
                       >
-                        {submittingAction ? 'Saving...' : 'Post Private Note'}
+                        <svg className="w-3.5 h-3.5 text-amber-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <span>{submittingAction ? 'Saving...' : 'Add Internal Note'}</span>
                       </button>
                     )}
                   </div>
@@ -1155,87 +1029,324 @@ export default function AgentDashboard() {
             </div>
           )}
         </main>
+
+        {/* PANE 3: RIGHT INSPECTOR PANEL (TICKET CONTROLS, SLA, AUDIT LOG) */}
+        {selectedDetails && (
+          <aside className="w-72 xl:w-80 shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-y-auto divide-y divide-slate-100">
+            {/* 1. Ticket Controls Section */}
+            <div className="p-4 space-y-3.5">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                Ticket Controls
+              </span>
+
+              {/* Priority Selector */}
+              <div>
+                <label className="block text-[11px] text-slate-500 mb-1">Priority</label>
+                <select
+                  value={selectedDetails.ticket.priority}
+                  disabled={submittingAction}
+                  onChange={(e) =>
+                    handleChangePriority(e.target.value as 'URGENT' | 'MEDIUM' | 'LOW')
+                  }
+                  className="w-full bg-white border border-slate-200 text-xs font-semibold text-slate-800 rounded-md px-2.5 py-1.5 focus:border-slate-900 focus:outline-hidden cursor-pointer"
+                >
+                  <option value="URGENT">URGENT (2h / 9h)</option>
+                  <option value="MEDIUM">MEDIUM (4.5h / 27h)</option>
+                  <option value="LOW">LOW (9h / 45h)</option>
+                </select>
+              </div>
+
+              {/* Claim Action */}
+              <div>
+                <label className="block text-[11px] text-slate-500 mb-1">Assigned Agent</label>
+                {selectedDetails.ticket.assigned_agent_id === currentAgent.id ? (
+                  <div className="w-full py-1.5 px-2.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Claimed by you</span>
+                  </div>
+                ) : selectedDetails.ticket.assigned_agent_id ? (
+                  <div className="space-y-1.5">
+                    <div className="text-xs text-slate-700 font-medium">
+                      {selectedDetails.ticket.assigned_agent_name || `Agent #${selectedDetails.ticket.assigned_agent_id}`}
+                    </div>
+                    <button
+                      onClick={handleClaimTicket}
+                      disabled={submittingAction}
+                      className="w-full py-1.5 px-2.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-md border border-slate-200 transition cursor-pointer"
+                    >
+                      Take Over Ticket
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleClaimTicket}
+                    disabled={submittingAction}
+                    className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-md border border-slate-800 shadow-2xs transition cursor-pointer"
+                  >
+                    Claim Ticket
+                  </button>
+                )}
+              </div>
+
+              {/* Resolve / Reopen Action */}
+              <div className="pt-1">
+                {selectedDetails.ticket.status !== 'RESOLVED' && selectedDetails.ticket.status !== 'CLOSED' ? (
+                  <button
+                    onClick={handleResolveTicket}
+                    disabled={submittingAction}
+                    className="w-full py-1.5 px-3 bg-white hover:bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200 transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Mark as Resolved</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleReopenTicket}
+                    disabled={submittingAction}
+                    className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-medium border border-slate-200 transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>Reopen Ticket</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 2. SLA Status Section */}
+            {selectedDetails.sla && (
+              <div className="p-4 space-y-3">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                  SLA Operations
+                </span>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Clock:</span>
+                    {selectedDetails.ticket.status === 'WAITING_ON_CUSTOMER' ? (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
+                        Paused
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                        Active
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Elapsed Working Time:</span>
+                    <span className="font-semibold text-slate-800 tabular-nums">
+                      {selectedDetails.sla.workingMinutesElapsed ?? 0}m ({((selectedDetails.sla.workingMinutesElapsed ?? 0) / 60).toFixed(1)}h)
+                    </span>
+                  </div>
+
+                  <div className="py-1 border-b border-slate-100">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="text-slate-500">First Reply Due:</span>
+                      {selectedDetails.sla.isFirstReplyBreached && (
+                        <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                          Breached
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium text-slate-800 tabular-nums">
+                      {formatDateTime(selectedDetails.sla.firstReplyDueAt)}
+                    </span>
+                  </div>
+
+                  <div className="py-1">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="text-slate-500">Resolution Due:</span>
+                      {selectedDetails.sla.isResolutionBreached && (
+                        <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                          Breached
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium text-slate-800 tabular-nums">
+                      {formatDateTime(selectedDetails.sla.resolutionDueAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Immutable Audit Trail Section */}
+            <div className="p-4 flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                  Audit Trail
+                </span>
+                <span className="text-[10px] font-mono text-slate-400 tabular-nums">
+                  {selectedDetails.audit_logs?.length || 0} events
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {(!selectedDetails.audit_logs || selectedDetails.audit_logs.length === 0) ? (
+                  <div className="text-[11px] text-slate-400 py-3 text-center">No audit entries.</div>
+                ) : (
+                  <div className="border-l border-slate-200 pl-3 space-y-3.5">
+                    {selectedDetails.audit_logs.map((log) => (
+                      <div key={log.id} className="relative text-xs">
+                        <div className="absolute -left-[17px] top-1 w-2 h-2 rounded-full bg-slate-400 border border-white" />
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-mono text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                            {log.action}
+                          </span>
+                          <span className="text-[10px] text-slate-400 tabular-nums">
+                            {formatDateTime(log.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600">
+                          by <strong className="text-slate-800">{log.actor_name || 'System'}</strong>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
 
-      {/* NEW TICKET MODAL */}
+      {/* 3. INLINE TOAST NOTIFICATIONS (Crisp Bottom-Right Stack) */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto p-3 rounded-lg border text-xs shadow-md flex items-start justify-between gap-3 transition-all ${
+              t.type === 'error'
+                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                : t.type === 'warning'
+                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                : t.type === 'success'
+                ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+                : 'bg-white border-slate-200 text-slate-800 shadow-sm'
+            }`}
+          >
+            <div className="flex items-start gap-2">
+              {t.type === 'success' && (
+                <svg className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+              {t.type === 'warning' && (
+                <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              )}
+              {t.type === 'error' && (
+                <svg className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              )}
+              <div>
+                {t.title && <div className="font-semibold">{t.title}</div>}
+                <div className="leading-snug">{t.text}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => removeToast(t.id)}
+              className="text-slate-400 hover:text-slate-700 text-xs font-bold cursor-pointer"
+            >
+              &times;
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* 4. NEW TICKET MODAL */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 border border-slate-200">
+        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 border border-slate-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-bold text-slate-900 text-lg">Create New Ticket</h3>
+              <h3 className="font-semibold text-slate-900 text-sm tracking-[-0.02em]">Create New Ticket</h3>
               <button
                 onClick={() => setShowNewModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 font-bold text-xs cursor-pointer"
               >
-                ✕
+                &times;
               </button>
             </div>
 
-            <form onSubmit={handleCreateTicket} className="space-y-4">
+            <form onSubmit={handleCreateTicket} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Subject</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                  Subject Summary
+                </label>
                 <input
                   type="text"
                   required
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
                   placeholder="e.g. Production API timeout error"
-                  className="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden"
+                  className="w-full text-xs border border-slate-200 rounded-lg p-2 text-slate-900 focus:border-slate-900 focus:outline-hidden"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Priority</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                    Priority
+                  </label>
                   <select
                     value={newPriority}
                     onChange={(e) => setNewPriority(e.target.value as 'URGENT' | 'MEDIUM' | 'LOW')}
-                    className="w-full text-sm border border-slate-300 rounded-lg p-2.5 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden cursor-pointer"
+                    className="w-full text-xs border border-slate-200 rounded-lg p-2 bg-white text-slate-900 focus:border-slate-900 focus:outline-hidden cursor-pointer"
                   >
-                    <option value="URGENT">URGENT (2h reply / 9h res)</option>
-                    <option value="MEDIUM">MEDIUM (4.5h reply / 27h res)</option>
-                    <option value="LOW">LOW (9h reply / 45h res)</option>
+                    <option value="URGENT">URGENT (2h / 9h)</option>
+                    <option value="MEDIUM">MEDIUM (4.5h / 27h)</option>
+                    <option value="LOW">LOW (9h / 45h)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Customer</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                    Customer Account
+                  </label>
                   <select
                     value={newCustomerId}
                     onChange={(e) => setNewCustomerId(Number(e.target.value))}
-                    className="w-full text-sm border border-slate-300 rounded-lg p-2.5 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden cursor-pointer"
+                    className="w-full text-xs border border-slate-200 rounded-lg p-2 bg-white text-slate-900 focus:border-slate-900 focus:outline-hidden cursor-pointer"
                   >
-                    <option value={4}>Amit Kumar</option>
-                    <option value={5}>Sneha Roy</option>
-                    <option value={6}>Vikram Singh</option>
+                    <option value={4}>Alex Chen (Acme)</option>
+                    <option value={5}>Sara Khan (Globex)</option>
+                    <option value={6}>Vikram Singh (Initech)</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">
+                  Description
+                </label>
                 <textarea
-                  rows={4}
                   required
+                  rows={4}
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Describe the issue reported by the customer..."
-                  className="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden resize-none"
+                  placeholder="Describe the issue in detail..."
+                  className="w-full text-xs border border-slate-200 rounded-lg p-2 text-slate-900 focus:border-slate-900 focus:outline-hidden resize-none font-sans"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingAction || !newSubject.trim() || !newDescription.trim()}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                  disabled={submittingAction}
+                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-md text-xs font-medium border border-slate-800 shadow-2xs transition cursor-pointer"
                 >
                   {submittingAction ? 'Creating...' : 'Create Ticket'}
                 </button>
