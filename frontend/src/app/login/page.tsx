@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ThemeToggle from '../components/ThemeToggle';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -99,11 +98,6 @@ export default function AgentLoginPage() {
         background: 'radial-gradient(circle at 50% 0%, #1E293B 0%, #0F172A 70%)',
       }}
     >
-      {/* Top Right Theme Switcher */}
-      <div className="absolute top-5 right-5 z-20">
-        <ThemeToggle />
-      </div>
-
       {/* Container Card */}
       <div className="relative z-10 max-w-[400px] w-full bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-[#1E293B] shadow-xl p-8 transition-colors">
         {/* Header */}
