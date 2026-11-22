@@ -194,6 +194,14 @@ export default function AgentDashboard() {
         return;
       }
 
+      // Restore saved theme on dashboard
+      const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('frontdesk-theme') : null;
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
       try {
         const parsed = JSON.parse(stored);
         if (parsed && parsed.id) {
@@ -654,12 +662,16 @@ export default function AgentDashboard() {
           <button
             onClick={() => {
               localStorage.removeItem('frontdesk_agent');
+              document.documentElement.classList.remove('dark');
               router.push('/login');
             }}
             title="Log out"
-            className="text-xs font-medium text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-[#1E293B] px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-[#1E293B] transition cursor-pointer"
+            className="text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/60 px-2.5 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
           >
-            Log out
+            <svg className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>Log out</span>
           </button>
         </div>
       </header>

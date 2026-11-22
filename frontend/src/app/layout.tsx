@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.getItem('frontdesk-theme') === 'dark') {
+                if (window.location.pathname !== '/login' && localStorage.getItem('frontdesk-theme') === 'dark') {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');
