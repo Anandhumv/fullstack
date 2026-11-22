@@ -75,7 +75,7 @@ async function seedDatabase() {
     await client.query(`
       INSERT INTO audit_logs (ticket_id, actor_id, action, metadata, created_at) VALUES
       ($1, $2, 'TICKET_CREATED', '{"priority": "URGENT", "source": "portal"}', NOW() - INTERVAL '3 days'),
-      ($1, $3, 'TICKET_CLAIMED', '{"assigned_agent_id": ' || $3 || '}', NOW() - INTERVAL '2 days 23 hours');
+      ($1, $3, 'TICKET_CLAIMED', jsonb_build_object('assigned_agent_id', $3::int), NOW() - INTERVAL '2 days 23 hours');
     `, [t1Id, custAmit.id, agentMeera.id]);
 
     // Ticket 2: Unassigned (Created 2 hours ago, status OPEN, no agent)
@@ -127,7 +127,7 @@ async function seedDatabase() {
     await client.query(`
       INSERT INTO audit_logs (ticket_id, actor_id, action, metadata, created_at) VALUES
       ($1, $2, 'TICKET_CREATED', '{"priority": "MEDIUM"}', NOW() - INTERVAL '24 hours'),
-      ($1, $3, 'TICKET_CLAIMED', '{"assigned_agent_id": ' || $3 || '}', NOW() - INTERVAL '20 hours'),
+      ($1, $3, 'TICKET_CLAIMED', jsonb_build_object('assigned_agent_id', $3::int), NOW() - INTERVAL '20 hours'),
       ($1, $3, 'PUBLIC_REPLY_ADDED', '{"role": "agent", "new_status": "WAITING_ON_CUSTOMER"}', NOW() - INTERVAL '18 hours'),
       ($1, $3, 'INTERNAL_NOTE_ADDED', '{"author": "agent"}', NOW() - INTERVAL '18 hours');
     `, [t3Id, custVikram.id, agentRahul.id]);
@@ -149,7 +149,7 @@ async function seedDatabase() {
     await client.query(`
       INSERT INTO audit_logs (ticket_id, actor_id, action, metadata, created_at) VALUES
       ($1, $2, 'TICKET_CREATED', '{"priority": "LOW"}', '2026-11-20 18:00:00+05:30'),
-      ($1, $3, 'TICKET_CLAIMED', '{"assigned_agent_id": ' || $3 || '}', '2026-11-20 18:15:00+05:30');
+      ($1, $3, 'TICKET_CLAIMED', jsonb_build_object('assigned_agent_id', $3::int), '2026-11-20 18:15:00+05:30');
     `, [t4Id, custAmit.id, agentPriya.id]);
 
     // Ticket 5: Resolved within 7 days (Resolved 2 days ago -> eligible for direct reopen)
@@ -175,7 +175,7 @@ async function seedDatabase() {
     await client.query(`
       INSERT INTO audit_logs (ticket_id, actor_id, action, metadata, created_at) VALUES
       ($1, $2, 'TICKET_CREATED', '{"priority": "LOW"}', NOW() - INTERVAL '4 days'),
-      ($1, $3, 'TICKET_CLAIMED', '{"assigned_agent_id": ' || $3 || '}', NOW() - INTERVAL '4 days'),
+      ($1, $3, 'TICKET_CLAIMED', jsonb_build_object('assigned_agent_id', $3::int), NOW() - INTERVAL '4 days'),
       ($1, $3, 'PUBLIC_REPLY_ADDED', '{"role": "agent"}', NOW() - INTERVAL '2 days'),
       ($1, $3, 'TICKET_RESOLVED', '{"resolved_at": "within_7_days"}', NOW() - INTERVAL '2 days');
     `, [t5Id, custSneha.id, agentMeera.id]);
@@ -203,7 +203,7 @@ async function seedDatabase() {
     await client.query(`
       INSERT INTO audit_logs (ticket_id, actor_id, action, metadata, created_at) VALUES
       ($1, $2, 'TICKET_CREATED', '{"priority": "LOW"}', NOW() - INTERVAL '14 days'),
-      ($1, $3, 'TICKET_CLAIMED', '{"assigned_agent_id": ' || $3 || '}', NOW() - INTERVAL '14 days'),
+      ($1, $3, 'TICKET_CLAIMED', jsonb_build_object('assigned_agent_id', $3::int), NOW() - INTERVAL '14 days'),
       ($1, $3, 'PUBLIC_REPLY_ADDED', '{"role": "agent"}', NOW() - INTERVAL '10 days'),
       ($1, $3, 'TICKET_RESOLVED', '{"resolved_at": "10_days_ago"}', NOW() - INTERVAL '10 days');
     `, [t6Id, custVikram.id, agentRahul.id]);
