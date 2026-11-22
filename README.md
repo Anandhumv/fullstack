@@ -6,6 +6,15 @@ Frontdesk is a full-stack customer support ticketing system built for Arvo Syste
 - **API Base URL:** [https://fullstack-55ey.onrender.com](https://fullstack-55ey.onrender.com)
 - **Repository:** https://github.com/Anandhumv/fullstack
 
+### Demo Credentials (Instant Access)
+For instant live review on [https://fullstack-frontdesk.vercel.app/login](https://fullstack-frontdesk.vercel.app/login):
+- **Password:** `frontdesk-agent`
+- **Seeded Agent Accounts:**
+  - `meera@frontdesk.test` — Senior Support Engineer
+  - `rahul@frontdesk.test` — Tier 2 Support Specialist
+  - `priya@frontdesk.test` — Operations Lead
+- *(Clickable quick-fill buttons are provided on the login card for one-click demo entry).*
+
 ---
 
 ## Tech Stack
@@ -82,8 +91,10 @@ When a ticket's priority is upgraded (e.g., `MEDIUM` → `URGENT`) mid-way, the 
 | `POST` | `/api/tickets/:id/reopen` | Reopen ticket (creates new linked ticket if > 7 days since resolution). |
 | `PATCH` | `/api/tickets/:id` | Update priority or status (logs audit entry). |
 | `GET` | `/api/customer/tickets/:id`| Customer ticket view (**Zero-Leak:** tickets & public messages ONLY). |
+| `GET` | `/api/agents` | List active support engineers for authentication and assignment. |
 | `GET` | `/api/users` | List users (`?role=agent` or `?role=customer`). |
 | `GET` | `/api/holidays` | List configured holiday dates. |
+| `GET` | `/health` | Server and PostgreSQL connection health check. |
 
 ---
 
@@ -144,9 +155,28 @@ The suite includes 4 verified automated test cases in `backend/utils/sla.test.js
 
 ## Application Pages & Navigation
 
-- **Agent Login (`/login`):** Default entry screen for support engineers with demo credential auto-fill (`frontdesk-agent`), authentication check, and redirection to the Agent Dashboard.
-- **Agent Dashboard (`/`):** Full-featured control center for support agents with real-time queue filters, SLA countdown indicators, atomic claiming (409 Conflict handling), dual-mode public reply / internal note composer, and immutable audit drawer.
-- **Customer Support Portal (`/support`):** Public, zero-auth customer contact portal with impact classification (Urgent, Medium, Low), support ticket submission, and live ticket status inspection backed by the zero-leak customer endpoint.
+- **Agent Login (`/login`):** Default entry screen for support engineers with demo credential auto-fill (`frontdesk-agent`), authentication check against active agents, and immediate redirection to the dashboard. Intentionally styled in a clean, focused Light theme.
+- **Agent Dashboard (`/`):** Full-featured 3-pane operations control center for support engineers:
+  - **Left Queue:** High-density ticket queue with segmented filters (`All`, `Late`, `Waiting`, `Unassigned`), live breach counts, and active-ticket indicator bars.
+  - **Centre Thread & Composer:** Visual separation between Customer Inquiries, Agent Public Replies, and Internal Team Notes (`#FEFCE8` / `#1E190C` warm amber surface with `🔒 PRIVATE TEAM NOTE` badge). Dual-mode reply/internal note toggle automatically re-themes the composer.
+  - **Right Inspector Panel:** Real-time working-hours SLA countdowns (`tabular-nums`), atomic claim button (`409 Conflict` resilient), priority/status controls, and expandable audit drawer.
+  - **Header Actions:** Instant theme switcher (Sun/Moon), ticket queue refresh button, online agent switcher, and high-visibility red **Log out** button.
+- **Customer Support Portal (`/support`):** Public, zero-auth customer contact portal:
+  - **Impact Mapping:** Selectable radio cards mapped directly to SLA priority:
+    - *I can't work at all* (System down / complete blocker) &rarr; `URGENT` (2h reply / 9h resolution)
+    - *Partly affected* (Broken feature with workaround) &rarr; `MEDIUM` (4.5h reply / 27h resolution)
+    - *Just a question* (How-to, billing, or request) &rarr; `LOW` (9h reply / 45h resolution)
+  - **Live Ticket Tracker:** Backed by the zero-leak customer endpoint (`GET /api/customer/tickets/:id`), allowing customers to track ticket progress and send public follow-up replies without seeing internal notes.
+
+---
+
+## Design System & Theme Architecture
+
+Inspired by high-craft B2B developer tools (Linear, Stripe, and Help Scout):
+- **Obsidian-Slate Dark Theme:** Canvas background `#0B0F19`, elevated cards `#111827`, hairline borders `#1E293B`, and low-glare semantic badges (`rgba(239, 68, 68, 0.14)` for Late/Urgent).
+- **Crisp Neutral Light Theme:** Canvas background `#F8FAFC`, cards `#FFFFFF`, borders `#E2E8F0`, and subtle hairline elevation shadows (`0 1px 2px rgba(15, 23, 42, 0.04)`).
+- **Tabular Alignment:** `font-variant-numeric: tabular-nums` applied across all ticket IDs (`#104`), timestamps, and countdown timers to prevent jitter.
+- **Theme Persistence:** Seamless client-side theme synchronization using `localStorage` (`frontdesk-theme`) and pre-hydration inline script to eliminate flash-of-unstyled-theme (FOUC).
 
 ---
 
