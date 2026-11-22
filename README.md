@@ -2,7 +2,7 @@
 
 Frontdesk is a full-stack customer support ticketing system built for Arvo Systems to replace their shared spreadsheet and WhatsApp workflow. It enforces working-hours SLAs, atomic ticket claiming, zero-leak internal team notes, and an immutable audit trail.
 
-- **Live Demo:** [https://fullstack-anandhu15.vercel.app](https://fullstack-anandhu15.vercel.app)
+- **Live Demo:** [https://fullstack-frontdesk.vercel.app](https://fullstack-frontdesk.vercel.app)
 - **API Base URL:** [https://fullstack-55ey.onrender.com](https://fullstack-55ey.onrender.com)
 - **Repository:** https://github.com/Anandhumv/fullstack
 
