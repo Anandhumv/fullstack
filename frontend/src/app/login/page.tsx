@@ -92,9 +92,20 @@ export default function AgentLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-12 sm:px-6">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-12 sm:px-6 relative overflow-hidden">
+      {/* Subtle static CSS dot-grid pattern with soft radial mask */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(#CBD5E1 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+          maskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, #000 50%, transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, #000 50%, transparent 100%)',
+        }}
+      />
+
       {/* Container Card */}
-      <div className="max-w-[400px] w-full bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-8">
+      <div className="relative z-10 max-w-[400px] w-full bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-8">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-7">
           <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 text-white flex items-center justify-center font-bold text-sm tracking-tight mb-3.5 shadow-2xs">
