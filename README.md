@@ -142,8 +142,15 @@ The suite includes 4 verified automated test cases in `backend/utils/sla.test.js
 
 ---
 
+## Application Pages & Navigation
+
+- **Agent Login (`/login`):** Default entry screen for support engineers with demo credential auto-fill (`frontdesk-agent`), authentication check, and redirection to the Agent Dashboard.
+- **Agent Dashboard (`/`):** Full-featured control center for support agents with real-time queue filters, SLA countdown indicators, atomic claiming (409 Conflict handling), dual-mode public reply / internal note composer, and immutable audit drawer.
+- **Customer Support Portal (`/support`):** Public, zero-auth customer contact portal with impact classification (Urgent, Medium, Low), support ticket submission, and live ticket status inspection backed by the zero-leak customer endpoint.
+
+---
+
 ## Trade-offs & What Was Not Finished (And Why)
 
-- **Dedicated Customer UI Portal:** I intentionally focused 100% of the UI effort on building a robust, single-screen Agent Dashboard. Customer interactions are supported via the zero-leak `/api/customer/tickets/:id` endpoint, proving private notes cannot leak at the API level while keeping within the project scope.
-- **Containerization (Docker Compose):** Skipped in favor of direct cloud hosting (Neon PostgreSQL + Render backend + Vercel frontend), which avoids local container overhead and directly supports serverless database branching.
+- **Containerization (Docker Compose):** Skipped in favor of direct production cloud hosting (Neon PostgreSQL + Render backend + Vercel frontend), which avoids local container overhead and allows immediate live review with zero local setup.
 

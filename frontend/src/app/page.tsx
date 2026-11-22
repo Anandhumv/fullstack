@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -85,6 +86,9 @@ const DEFAULT_AGENTS: User[] = [
 ];
 
 export default function AgentDashboard() {
+  const router = useRouter();
+  const [isAuthChecked, setIsAuthChecked] = useState<boolean>(false);
+
   // Current logged in agent selector
   const [agents, setAgents] = useState<User[]>(DEFAULT_AGENTS);
   const [currentAgent, setCurrentAgent] = useState<User>(DEFAULT_AGENTS[0]);
@@ -169,13 +173,47 @@ export default function AgentDashboard() {
     let active = true;
 
     async function initialize() {
+      // Yield to microtask queue to decouple from synchronous effect execution
+      await Promise.resolve();
+      if (!active) return;
+
+      // Check agent authentication
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('frontdesk_agent') : null;
+      if (!stored) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id) {
+          setCurrentAgent(parsed);
+          setIsAuthChecked(true);
+        } else {
+          router.push('/login');
+          return;
+        }
+      } catch {
+        router.push('/login');
+        return;
+      }
+
       try {
         const agentsRes = await fetch(`${API_BASE}/api/users?role=agent`);
         if (agentsRes.ok && active) {
           const agentData = await agentsRes.json();
           if (Array.isArray(agentData) && agentData.length > 0) {
             setAgents(agentData);
-            setCurrentAgent(agentData[0]);
+            const currentStored = localStorage.getItem('frontdesk_agent');
+            if (currentStored) {
+              try {
+                const parsedStored = JSON.parse(currentStored);
+                const matched = agentData.find((a: User) => a.id === parsedStored.id || a.email === parsedStored.email);
+                if (matched) setCurrentAgent(matched);
+              } catch {
+                // keep current
+              }
+            }
           }
         }
       } catch {
@@ -208,7 +246,7 @@ export default function AgentDashboard() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [router]);
 
   // Load details when selected ticket changes
   useEffect(() => {
@@ -511,6 +549,16 @@ export default function AgentDashboard() {
     }
   };
 
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg animate-pulse shadow-sm">
+          F
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen bg-slate-100 text-slate-900 font-sans">
       {/* 1. TOP BAR */}
@@ -535,6 +583,7 @@ export default function AgentDashboard() {
                 const ag = agents.find((a) => a.id === Number(e.target.value));
                 if (ag) {
                   setCurrentAgent(ag);
+                  localStorage.setItem('frontdesk_agent', JSON.stringify(ag));
                   setConflictAlert(null);
                 }
               }}
@@ -557,6 +606,17 @@ export default function AgentDashboard() {
             <svg className={`w-5 h-5 ${loadingTickets ? 'animate-spin text-blue-600' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
+          </button>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem('frontdesk_agent');
+              router.push('/login');
+            }}
+            title="Log out of Frontdesk"
+            className="text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-slate-100 px-2.5 py-1.5 rounded-md border border-slate-200 transition cursor-pointer"
+          >
+            Log out
           </button>
         </div>
       </header>

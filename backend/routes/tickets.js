@@ -114,24 +114,47 @@ router.get('/', async (req, res) => {
  * POST /api/tickets - Create a new support ticket
  */
 router.post('/', async (req, res) => {
-  const { subject, description, priority = 'MEDIUM', customer_id } = req.body;
+  const { subject, description, priority = 'MEDIUM', customer_id, name, email, company } = req.body;
 
-  if (!subject || !description || !customer_id) {
-    return res.status(400).json({ error: 'subject, description, and customer_id are required' });
-  }
-
-  const validPriorities = ['URGENT', 'MEDIUM', 'LOW'];
-  const normalizedPriority = priority.toUpperCase();
-  if (!validPriorities.includes(normalizedPriority)) {
-    return res.status(400).json({ error: `priority must be one of: ${validPriorities.join(', ')}` });
-  }
+  let targetCustomerId = customer_id;
 
   try {
+    // If customer_id is not directly supplied, resolve or create customer via email
+    if (!targetCustomerId && email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const userCheck = await db.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [normalizedEmail]);
+      if (userCheck.rows.length > 0) {
+        targetCustomerId = userCheck.rows[0].id;
+      } else {
+        const customerName = name && name.trim() ? name.trim() : normalizedEmail.split('@')[0];
+        const createRes = await db.query(
+          "INSERT INTO users (name, email, role) VALUES ($1, $2, 'customer') RETURNING id",
+          [customerName, normalizedEmail]
+        );
+        targetCustomerId = createRes.rows[0].id;
+      }
+    }
+
+    if (!subject || !description || !targetCustomerId) {
+      return res.status(400).json({ error: 'subject, description, and customer_id or email are required' });
+    }
+
+    const validPriorities = ['URGENT', 'MEDIUM', 'LOW'];
+    const normalizedPriority = priority.toUpperCase();
+    if (!validPriorities.includes(normalizedPriority)) {
+      return res.status(400).json({ error: `priority must be one of: ${validPriorities.join(', ')}` });
+    }
+
+    // If company is supplied and not already in description, include in description
+    const fullDescription = company && !description.includes(`[Company: ${company}]`)
+      ? `[Company: ${company}]\n\n${description}`
+      : description;
+
     const insertRes = await db.query(
       `INSERT INTO tickets (subject, description, priority, status, customer_id, created_at)
        VALUES ($1, $2, $3, 'OPEN', $4, NOW())
        RETURNING *`,
-      [subject, description, normalizedPriority, customer_id]
+      [subject, fullDescription, normalizedPriority, targetCustomerId]
     );
 
     const ticket = insertRes.rows[0];
@@ -139,9 +162,9 @@ router.post('/', async (req, res) => {
     // Audit log
     await logAudit(db, {
       ticket_id: ticket.id,
-      actor_id: customer_id,
+      actor_id: targetCustomerId,
       action: 'TICKET_CREATED',
-      metadata: { priority: normalizedPriority, subject },
+      metadata: { priority: normalizedPriority, subject, company: company || null },
     });
 
     res.status(201).json(ticket);

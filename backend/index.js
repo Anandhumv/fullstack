@@ -20,6 +20,16 @@ app.use('/api/customer', customerRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/holidays', holidaysRouter);
 
+// Alias for GET /api/agents
+app.get('/api/agents', async (req, res) => {
+  try {
+    const result = await db.query("SELECT id, name, email, role, created_at FROM users WHERE role = 'agent' ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
