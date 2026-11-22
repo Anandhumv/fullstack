@@ -108,28 +108,18 @@ export default function AgentDashboard() {
   const [conflictAlert, setConflictAlert] = useState<string | null>(null);
   const [generalAlert, setGeneralAlert] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
+  // New ticket modal
+  const [showNewModal, setShowNewModal] = useState<boolean>(false);
+  const [newSubject, setNewSubject] = useState<string>('');
+  const [newDescription, setNewDescription] = useState<string>('');
+  const [newPriority, setNewPriority] = useState<'URGENT' | 'MEDIUM' | 'LOW'>('URGENT');
+  const [newCustomerId, setNewCustomerId] = useState<number>(4);
+
   // Audit tab/collapse
   const [showAuditLogs, setShowAuditLogs] = useState<boolean>(false);
 
-  // Fetch agents list
-  const fetchAgents = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/users?role=agent`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setAgents(data);
-          // Preserve currently selected agent ID if possible
-          setCurrentAgent((prev) => data.find((a: User) => a.id === prev.id) || data[0]);
-        }
-      }
-    } catch {
-      // Use DEFAULT_AGENTS fallback
-    }
-  }, []);
-
-  // Fetch ticket queue
-  const fetchTickets = useCallback(async (preserveSelectedId = true) => {
+  // Re-fetch ticket queue
+  const refreshTickets = useCallback(async (preserveSelectedId = true) => {
     setLoadingTickets(true);
     try {
       const res = await fetch(`${API_BASE}/api/tickets`);
@@ -146,8 +136,6 @@ export default function AgentDashboard() {
         } else {
           setSelectedTicketId(null);
         }
-      } else {
-        setGeneralAlert({ type: 'error', text: `Failed to load tickets (Status: ${res.status})` });
       }
     } catch {
       setGeneralAlert({
@@ -159,8 +147,8 @@ export default function AgentDashboard() {
     }
   }, []);
 
-  // Fetch single ticket details
-  const fetchTicketDetails = useCallback(async (id: number) => {
+  // Re-fetch single ticket details
+  const refreshTicketDetails = useCallback(async (id: number) => {
     setLoadingDetails(true);
     setConflictAlert(null);
     try {
@@ -168,8 +156,6 @@ export default function AgentDashboard() {
       if (res.ok) {
         const data = await res.json();
         setSelectedDetails(data);
-      } else {
-        setGeneralAlert({ type: 'error', text: `Error fetching ticket #${id} details` });
       }
     } catch {
       setGeneralAlert({ type: 'error', text: 'Network error while fetching ticket details' });
@@ -178,20 +164,84 @@ export default function AgentDashboard() {
     }
   }, []);
 
-  // Initial load
+  // Initial data load effect
   useEffect(() => {
-    fetchAgents();
-    fetchTickets();
-  }, [fetchAgents, fetchTickets]);
+    let active = true;
+
+    async function initialize() {
+      try {
+        const agentsRes = await fetch(`${API_BASE}/api/users?role=agent`);
+        if (agentsRes.ok && active) {
+          const agentData = await agentsRes.json();
+          if (Array.isArray(agentData) && agentData.length > 0) {
+            setAgents(agentData);
+            setCurrentAgent(agentData[0]);
+          }
+        }
+      } catch {
+        // Fallback default agents
+      }
+
+      try {
+        const ticketsRes = await fetch(`${API_BASE}/api/tickets`);
+        if (ticketsRes.ok && active) {
+          const ticketData = await ticketsRes.json();
+          setTickets(ticketData);
+          if (ticketData.length > 0) {
+            setSelectedTicketId(ticketData[0].id);
+          }
+        }
+      } catch {
+        if (active) {
+          setGeneralAlert({
+            type: 'error',
+            text: `Cannot connect to backend API at ${API_BASE}. Make sure the backend server is running.`,
+          });
+        }
+      } finally {
+        if (active) setLoadingTickets(false);
+      }
+    }
+
+    initialize();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Load details when selected ticket changes
   useEffect(() => {
-    if (selectedTicketId) {
-      fetchTicketDetails(selectedTicketId);
-    } else {
-      setSelectedDetails(null);
+    let active = true;
+
+    if (!selectedTicketId) {
+      return;
     }
-  }, [selectedTicketId, fetchTicketDetails]);
+
+    async function loadDetails() {
+      setLoadingDetails(true);
+      setConflictAlert(null);
+      try {
+        const res = await fetch(`${API_BASE}/api/tickets/${selectedTicketId}`);
+        if (res.ok && active) {
+          const data = await res.json();
+          setSelectedDetails(data);
+        }
+      } catch {
+        if (active) {
+          setGeneralAlert({ type: 'error', text: 'Network error while loading ticket details' });
+        }
+      } finally {
+        if (active) setLoadingDetails(false);
+      }
+    }
+
+    loadDetails();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedTicketId]);
 
   // Filtered queue
   const filteredTickets = useMemo(() => {
@@ -224,9 +274,8 @@ export default function AgentDashboard() {
       if (res.status === 409) {
         const errorData = await res.json();
         setConflictAlert(errorData.error || 'Ticket already claimed by another agent');
-        // Refresh ticket details to see current owner
-        fetchTicketDetails(selectedTicketId);
-        fetchTickets();
+        refreshTicketDetails(selectedTicketId);
+        refreshTickets();
         return;
       }
 
@@ -236,8 +285,8 @@ export default function AgentDashboard() {
       }
 
       setGeneralAlert({ type: 'success', text: `Ticket #${selectedTicketId} successfully claimed by ${currentAgent.name}!` });
-      await fetchTicketDetails(selectedTicketId);
-      await fetchTickets();
+      await refreshTicketDetails(selectedTicketId);
+      await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error claiming ticket';
       setGeneralAlert({ type: 'error', text: msg });
@@ -260,8 +309,8 @@ export default function AgentDashboard() {
       if (!res.ok) throw new Error('Failed to update priority');
 
       setGeneralAlert({ type: 'success', text: `Priority changed to ${newPriority}` });
-      await fetchTicketDetails(selectedTicketId);
-      await fetchTickets();
+      await refreshTicketDetails(selectedTicketId);
+      await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error updating priority';
       setGeneralAlert({ type: 'error', text: msg });
@@ -284,8 +333,8 @@ export default function AgentDashboard() {
       if (!res.ok) throw new Error('Failed to resolve ticket');
 
       setGeneralAlert({ type: 'success', text: `Ticket #${selectedTicketId} resolved` });
-      await fetchTicketDetails(selectedTicketId);
-      await fetchTickets();
+      await refreshTicketDetails(selectedTicketId);
+      await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error resolving ticket';
       setGeneralAlert({ type: 'error', text: msg });
@@ -313,15 +362,50 @@ export default function AgentDashboard() {
           type: 'info',
           text: `Original ticket was resolved > 7 days ago. Automatically created new linked ticket #${data.ticket.id}.`,
         });
-        await fetchTickets();
+        await refreshTickets();
         setSelectedTicketId(data.ticket.id);
       } else {
         setGeneralAlert({ type: 'success', text: `Ticket #${selectedTicketId} reopened successfully.` });
-        await fetchTicketDetails(selectedTicketId);
-        await fetchTickets();
+        await refreshTicketDetails(selectedTicketId);
+        await refreshTickets();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error reopening ticket';
+      setGeneralAlert({ type: 'error', text: msg });
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  // Create New Ticket Handler
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubject.trim() || !newDescription.trim()) return;
+
+    setSubmittingAction(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: newSubject.trim(),
+          description: newDescription.trim(),
+          priority: newPriority,
+          customer_id: newCustomerId,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create ticket');
+      const created = await res.json();
+
+      setGeneralAlert({ type: 'success', text: `Ticket #${created.id} created successfully!` });
+      setShowNewModal(false);
+      setNewSubject('');
+      setNewDescription('');
+      await refreshTickets();
+      setSelectedTicketId(created.id);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error creating ticket';
       setGeneralAlert({ type: 'error', text: msg });
     } finally {
       setSubmittingAction(false);
@@ -336,7 +420,6 @@ export default function AgentDashboard() {
     setSubmittingAction(true);
     try {
       if (composerMode === 'reply') {
-        // Public Reply to Customer
         const res = await fetch(`${API_BASE}/api/tickets/${selectedTicketId}/reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -344,9 +427,8 @@ export default function AgentDashboard() {
         });
 
         if (!res.ok) throw new Error('Failed to send public reply');
-        setGeneralAlert({ type: 'success', text: 'Public reply sent to customer (Ticket set to WAITING_ON_CUSTOMER)' });
+        setGeneralAlert({ type: 'success', text: 'Public reply sent to customer (Status set to WAITING_ON_CUSTOMER, SLA paused)' });
       } else {
-        // Private Internal Note
         const res = await fetch(`${API_BASE}/api/tickets/${selectedTicketId}/notes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -358,8 +440,8 @@ export default function AgentDashboard() {
       }
 
       setComposerText('');
-      await fetchTicketDetails(selectedTicketId);
-      await fetchTickets();
+      await refreshTicketDetails(selectedTicketId);
+      await refreshTickets();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error submitting message';
       setGeneralAlert({ type: 'error', text: msg });
@@ -468,9 +550,9 @@ export default function AgentDashboard() {
           </div>
 
           <button
-            onClick={() => fetchTickets()}
+            onClick={() => refreshTickets()}
             title="Refresh Queue"
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
           >
             <svg className={`w-5 h-5 ${loadingTickets ? 'animate-spin text-blue-600' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -493,7 +575,7 @@ export default function AgentDashboard() {
           <span>{generalAlert.text}</span>
           <button
             onClick={() => setGeneralAlert(null)}
-            className="text-white hover:text-slate-200 font-bold ml-4"
+            className="text-white hover:text-slate-200 font-bold ml-4 cursor-pointer"
           >
             ✕
           </button>
@@ -504,12 +586,22 @@ export default function AgentDashboard() {
       <div className="flex flex-1 overflow-hidden">
         {/* 2. LEFT PANEL: TICKET QUEUE */}
         <section className="w-full md:w-96 lg:w-[420px] bg-white border-r border-slate-200 flex flex-col shrink-0">
-          {/* Queue Filter Tabs */}
+          {/* Queue Filter Tabs & New Ticket Button */}
           <div className="p-3 border-b border-slate-200 bg-slate-50/70">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Queue ({filteredTickets.length})</span>
+              <button
+                onClick={() => setShowNewModal(true)}
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-2xs transition flex items-center gap-1 cursor-pointer"
+              >
+                <span>+</span> New Ticket
+              </button>
+            </div>
+
             <div className="grid grid-cols-4 gap-1 bg-slate-200/80 p-1 rounded-lg text-xs font-semibold">
               <button
                 onClick={() => setQueueFilter('ALL')}
-                className={`py-1.5 px-2 rounded-md transition text-center ${
+                className={`py-1.5 px-2 rounded-md transition text-center cursor-pointer ${
                   queueFilter === 'ALL' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -517,7 +609,7 @@ export default function AgentDashboard() {
               </button>
               <button
                 onClick={() => setQueueFilter('LATE')}
-                className={`py-1.5 px-2 rounded-md transition text-center flex items-center justify-center gap-1 ${
+                className={`py-1.5 px-2 rounded-md transition text-center flex items-center justify-center gap-1 cursor-pointer ${
                   queueFilter === 'LATE' ? 'bg-white text-red-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -526,7 +618,7 @@ export default function AgentDashboard() {
               </button>
               <button
                 onClick={() => setQueueFilter('WAITING')}
-                className={`py-1.5 px-2 rounded-md transition text-center truncate ${
+                className={`py-1.5 px-2 rounded-md transition text-center truncate cursor-pointer ${
                   queueFilter === 'WAITING' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Waiting on Customer"
@@ -535,16 +627,12 @@ export default function AgentDashboard() {
               </button>
               <button
                 onClick={() => setQueueFilter('UNASSIGNED')}
-                className={`py-1.5 px-2 rounded-md transition text-center truncate ${
+                className={`py-1.5 px-2 rounded-md transition text-center truncate cursor-pointer ${
                   queueFilter === 'UNASSIGNED' ? 'bg-white text-amber-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Unassigned
               </button>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs text-slate-500 px-1">
-              <span>Showing {filteredTickets.length} tickets</span>
-              <span>Sorted by newest</span>
             </div>
           </div>
 
@@ -650,7 +738,7 @@ export default function AgentDashboard() {
                   </div>
                   <button
                     onClick={() => setConflictAlert(null)}
-                    className="text-red-700 hover:text-red-900 font-bold text-sm"
+                    className="text-red-700 hover:text-red-900 font-bold text-sm cursor-pointer"
                   >
                     ✕
                   </button>
@@ -712,7 +800,7 @@ export default function AgentDashboard() {
                         submittingAction ||
                         selectedDetails.ticket.assigned_agent_id === currentAgent.id
                       }
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs ${
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
                         selectedDetails.ticket.assigned_agent_id === currentAgent.id
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
                           : selectedDetails.ticket.assigned_agent_id
@@ -734,7 +822,7 @@ export default function AgentDashboard() {
                       <button
                         onClick={handleResolveTicket}
                         disabled={submittingAction}
-                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs"
+                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs cursor-pointer"
                       >
                         ✓ Resolve Ticket
                       </button>
@@ -742,7 +830,7 @@ export default function AgentDashboard() {
                       <button
                         onClick={handleReopenTicket}
                         disabled={submittingAction}
-                        className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs"
+                        className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs cursor-pointer"
                       >
                         ↻ Reopen Ticket
                       </button>
@@ -883,7 +971,7 @@ export default function AgentDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowAuditLogs(!showAuditLogs)}
-                  className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100/80 text-left flex items-center justify-between text-xs font-bold text-slate-700 transition"
+                  className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100/80 text-left flex items-center justify-between text-xs font-bold text-slate-700 transition cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <span>🛡️</span>
@@ -938,7 +1026,7 @@ export default function AgentDashboard() {
                     <button
                       type="button"
                       onClick={() => setComposerMode('reply')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                         composerMode === 'reply'
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -949,7 +1037,7 @@ export default function AgentDashboard() {
                     <button
                       type="button"
                       onClick={() => setComposerMode('note')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                         composerMode === 'note'
                           ? 'bg-amber-500 text-white shadow-xs'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -1008,6 +1096,94 @@ export default function AgentDashboard() {
           )}
         </main>
       </div>
+
+      {/* NEW TICKET MODAL */}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 border border-slate-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <h3 className="font-bold text-slate-900 text-lg">Create New Ticket</h3>
+              <button
+                onClick={() => setShowNewModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTicket} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Subject</label>
+                <input
+                  type="text"
+                  required
+                  value={newSubject}
+                  onChange={(e) => setNewSubject(e.target.value)}
+                  placeholder="e.g. Production API timeout error"
+                  className="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Priority</label>
+                  <select
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(e.target.value as 'URGENT' | 'MEDIUM' | 'LOW')}
+                    className="w-full text-sm border border-slate-300 rounded-lg p-2.5 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="URGENT">URGENT (2h reply / 9h res)</option>
+                    <option value="MEDIUM">MEDIUM (4.5h reply / 27h res)</option>
+                    <option value="LOW">LOW (9h reply / 45h res)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Customer</label>
+                  <select
+                    value={newCustomerId}
+                    onChange={(e) => setNewCustomerId(Number(e.target.value))}
+                    className="w-full text-sm border border-slate-300 rounded-lg p-2.5 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value={4}>Amit Kumar</option>
+                    <option value={5}>Sneha Roy</option>
+                    <option value={6}>Vikram Singh</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Describe the issue reported by the customer..."
+                  className="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-hidden resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNewModal(false)}
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingAction || !newSubject.trim() || !newDescription.trim()}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                >
+                  {submittingAction ? 'Creating...' : 'Create Ticket'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
